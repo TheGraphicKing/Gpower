@@ -137,6 +137,13 @@
             display: none;
         }
 
+        .home-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .auth-card {
             background: var(--card-bg);
             padding: 32px;
@@ -1628,6 +1635,17 @@
                 </div>
             </div>
         </div>
+        <script>
+            // GLOBAL ERROR HANDLER FOR DEBUGGING
+            window.onerror = function (msg, url, line, col, error) {
+                if (msg.includes('ResizeObserver')) return false;
+                alert("Error: " + msg + "\nLine: " + line);
+                return false;
+            };
+            window.onunhandledrejection = function (event) {
+                alert("Promise Error: " + event.reason);
+            };
+        </script>
         <script> // =====================
 
             // FIREBASE CONFIGURATION
@@ -1662,27 +1680,32 @@
 
             // Check auth state on load
             auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    currentUser = user;
+                try {
+                    if (user) {
+                        currentUser = user;
 
-                    // Check if admin
-                    if (user.email === ADMIN_EMAIL) {
-                        isAdmin = true;
-                        showAdminDashboard();
-                    }
-
-                    else {
+                        // Check if admin
+                        if (user.email === ADMIN_EMAIL) {
+                            isAdmin = true;
+                            showAdminDashboard();
+                        } else {
+                            isAdmin = false;
+                            // Attempt to load data but don't block UI if it fails
+                            try {
+                                await loadUserData();
+                            } catch (e) {
+                                console.error("Data load error:", e);
+                            }
+                            showHome();
+                        }
+                    } else {
+                        currentUser = null;
                         isAdmin = false;
-                        await loadUserData();
-                        // Log user login
-                        showHome();
+                        showLogin();
                     }
-                }
-
-                else {
-                    currentUser = null;
-                    isAdmin = false;
-                    showLogin();
+                } catch (e) {
+                    alert("Auth Error: " + e.message);
+                    showLogin(); // Fallback
                 }
             });
 
