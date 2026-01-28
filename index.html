@@ -1716,9 +1716,13 @@
             }
 
             // Show signup screen
+            // Show signup screen
             function showSignup() {
-                hideAllScreens();
-                document.getElementById('signupScreen').classList.remove('hidden');
+                try {
+                    hideAllScreens();
+                    const el = document.getElementById('signupScreen');
+                    if (el) el.classList.remove('hidden');
+                } catch (e) { console.error(e); alert("Nav Error: " + e.message); }
             }
 
             // Show admin login screen
@@ -1745,14 +1749,20 @@
             }
 
             // Hide all screens
+            // Hide all screens safely
             function hideAllScreens() {
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('signupScreen').classList.add('hidden');
-                document.getElementById('adminLoginScreen').classList.add('hidden');
-                document.getElementById('homeScreen').classList.add('hidden');
-                document.getElementById('adminDashboard').classList.remove('active');
-                document.getElementById('sessionScreen').classList.remove('active');
-                document.getElementById('gameAnswerScreen').classList.remove('active');
+                const screens = [
+                    'loginScreen', 'signupScreen', 'adminLoginScreen', 'homeScreen',
+                    'adminDashboard', 'sessionScreen', 'gameAnswerScreen'
+                ];
+
+                screens.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.classList.add('hidden');
+                        el.classList.remove('active');
+                    }
+                });
             }
 
             // Handle signup
