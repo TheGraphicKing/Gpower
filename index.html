@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧘 Yoga Meditation</title>
+    <title>G Power Yoga</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -12,57 +19,289 @@
         }
 
         :root {
-            --primary: #7C9A92;
-            --primary-dark: #5A7A72;
-            --primary-light: #A8C5BD;
-            --secondary: #B8A9C9;
-            --background: #F7F5F2;
+            /* Relaxing Earth Tones Palette */
+            --primary: #8FA89B;
+            /* Sage Green */
+            --primary-dark: #6D8579;
+            /* Darker Sage */
+            --primary-light: #C4D6CE;
+            /* Light Sage */
+            --secondary: #D4BBA3;
+            /* Warm Sand */
+            --background: #FDFBF7;
+            /* Off-white Cream */
             --card-bg: #FFFFFF;
-            --text-primary: #3D4A47;
-            --text-secondary: #6B7B77;
-            --text-light: #9AA8A4;
-            --success: #88B892;
-            --error: #D4A5A5;
-            --border: #E0DDD8;
+            --text-primary: #4A4A4A;
+            /* Soft Charcoal */
+            --text-secondary: #747474;
+            --text-light: #A4A4A4;
+            --success: #9BC1A3;
+            --error: #D6A2A2;
+            --border: #E8E6E1;
+            --admin: #8FA89B;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: var(--background);
             color: var(--text-primary);
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 0;
         }
 
         .container {
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow-y: auto;
+            padding: 24px;
+            padding-bottom: 100px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Logo Styles */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(143, 168, 155, 0.3);
         }
 
         h1 {
-            font-size: 2rem;
-            margin-bottom: 8px;
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
             text-align: center;
         }
 
         .subtitle {
             color: var(--text-secondary);
+            margin-bottom: 32px;
+            text-align: center;
+            font-weight: 300;
+        }
+
+        /* Improved Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+                padding-bottom: 90px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Components */
+        .auth-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            min-height: 80vh;
+            justify-content: center;
+        }
+
+        .auth-container.hidden {
+            display: none;
+        }
+
+        .home-container.hidden {
+            display: none;
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(143, 168, 155, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-title {
+            font-size: 1.3rem;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
             margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 30px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+
+        .auth-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .auth-btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .auth-btn-google {
+            background: white;
+            color: #444;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-btn-admin {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            padding: 12px;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-secondary);
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .auth-divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .auth-divider-text {
+            padding: 0 16px;
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .auth-error {
+            background: rgba(214, 162, 162, 0.2);
+            color: #c0392b;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 16px;
             text-align: center;
         }
 
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(143, 168, 155, 0.3);
+        }
+
+        .welcome-name {
+            font-weight: 700;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* Legacy/Feature Styles */
         .lotus {
             font-size: 64px;
             margin-bottom: 24px;
+            filter: opacity(0.8);
         }
 
         .section {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -72,14 +311,15 @@
 
         .section-title {
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 500;
             margin-bottom: 4px;
+            color: var(--primary-dark);
         }
 
         .section-desc {
             font-size: 0.9rem;
             color: var(--text-secondary);
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             text-align: center;
         }
 
@@ -88,33 +328,36 @@
             height: 100px;
             border-radius: 50%;
             background: var(--card-bg);
-            border: 3px solid var(--primary);
+            border: 2px solid var(--primary-light);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(61, 74, 71, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(143, 168, 155, 0.15);
         }
 
         .record-btn:hover {
-            transform: scale(1.05);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(143, 168, 155, 0.25);
+            border-color: var(--primary);
         }
 
         .record-btn.recording {
             border-color: var(--error);
-            background: rgba(212, 165, 165, 0.2);
+            background: rgba(214, 162, 162, 0.1);
         }
 
         .record-btn-inner {
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 32px;
+            color: white;
             transition: all 0.3s;
         }
 
@@ -132,6 +375,85 @@
             border-radius: 3px;
         }
 
+        .btn {
+            padding: 16px 32px;
+            border-radius: 30px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(143, 168, 155, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider-text {
+            padding: 0 16px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-top: auto;
+            padding-top: 10px;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Indicators */
         .recording-indicator {
             margin-top: 16px;
             display: flex;
@@ -143,6 +465,26 @@
             color: var(--error);
             font-weight: 500;
             margin-top: 8px;
+        }
+
+        .audio-ready {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(155, 193, 163, 0.2);
+            padding: 8px 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+
+        .audio-ready-icon {
+            color: var(--success);
+        }
+
+        .audio-ready-text {
+            color: var(--success);
+            font-weight: 500;
+            font-size: 0.9rem;
         }
 
         .wave-animation {
@@ -160,141 +502,209 @@
             animation: wave 0.5s ease-in-out infinite alternate;
         }
 
-        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
-        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
-        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
-        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .wave-bar:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .wave-bar:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        .wave-bar:nth-child(5) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes wave {
-            from { transform: scaleY(0.3); }
-            to { transform: scaleY(1); }
+            from {
+                transform: scaleY(0.3);
+            }
+
+            to {
+                transform: scaleY(1);
+            }
         }
 
-        .audio-ready {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(136, 184, 146, 0.2);
-            padding: 8px 16px;
-            border-radius: 12px;
-            margin-top: 16px;
-        }
-
-        .audio-ready-icon {
-            color: var(--success);
-            font-size: 1.1rem;
-        }
-
-        .audio-ready-text {
-            color: var(--success);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            margin: 16px 0;
-        }
-
-        .divider-line {
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        .divider-text {
-            padding: 0 16px;
-            color: var(--text-light);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .btn {
-            padding: 16px 32px;
-            border-radius: 16px;
-            border: none;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
+        .session-wave .wave-bar {
             background: var(--primary);
-            color: white;
         }
 
-        .btn-primary:hover {
-            background: var(--primary-dark);
+        /* Customization */
+        .customization-section {
+            background: rgba(143, 168, 155, 0.1);
+            padding: 20px;
+            border-radius: 16px;
+            margin-top: 20px;
         }
 
-        .btn-primary:disabled {
-            background: var(--border);
-            color: var(--text-light);
-            cursor: not-allowed;
+        .setting-row {
+            margin-bottom: 16px;
+            width: 100%;
         }
 
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
+        .setting-label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .speed-options,
+        .repeat-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .speed-btn,
+        .repeat-btn {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .speed-btn:hover,
+        .repeat-btn:hover {
+            border-color: var(--primary);
             color: var(--primary);
         }
 
-        .btn-outline:hover {
-            background: rgba(124, 154, 146, 0.1);
+        .speed-btn.active,
+        .repeat-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
 
-        .action-buttons {
+        /* Game & Mode */
+        .mode-selector {
             display: flex;
             gap: 12px;
+            margin-bottom: 24px;
             width: 100%;
-            margin-top: auto;
-            padding-top: 24px;
         }
 
-        .action-buttons .btn {
+        .mode-btn {
             flex: 1;
+            padding: 16px 12px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(143, 168, 155, 0.25);
+        }
+
+        .mode-icon {
+            font-size: 1.5rem;
+        }
+
+        .game-section {
+            width: 100%;
+            background: rgba(212, 187, 163, 0.15);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .category-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
             justify-content: center;
         }
 
-        .file-input {
-            display: none;
+        .category-btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Session Screen Styles */
-        .session-container {
+        .category-btn.active {
+            background: var(--secondary);
+            border-color: var(--secondary);
+            color: white;
+        }
+
+        .difficulty-options {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+
+        .difficulty-btn {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+        }
+
+        .difficulty-btn.active {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        /* Session Screens */
+        .session-container,
+        .game-answer-container,
+        .admin-container {
             display: none;
             flex-direction: column;
             align-items: center;
             width: 100%;
         }
 
-        .session-container.active {
+        .session-container.active,
+        .game-answer-container.active,
+        .admin-container.active {
             display: flex;
-        }
-
-        .home-container.hidden {
-            display: none;
         }
 
         .progress-steps {
             display: flex;
-            align-items: flex-start;
+            width: 100%;
             justify-content: center;
             margin-bottom: 32px;
-            width: 100%;
         }
 
         .step-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 70px;
+            width: 60px;
         }
 
         .step {
@@ -306,9 +716,8 @@
             align-items: center;
             justify-content: center;
             font-size: 0.9rem;
-            font-weight: 600;
             color: var(--text-light);
-            transition: all 0.3s;
+            transition: 0.3s;
         }
 
         .step.active {
@@ -331,7 +740,7 @@
 
         .step-label.active {
             color: var(--text-primary);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .connector {
@@ -339,8 +748,6 @@
             flex: 1;
             background: var(--border);
             margin-top: 15px;
-            margin-left: -8px;
-            margin-right: -8px;
         }
 
         .connector.completed {
@@ -348,45 +755,46 @@
         }
 
         .meditation-circle {
-            width: 160px;
-            height: 160px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
-            background: rgba(168, 197, 189, 0.4);
-            border: 3px solid var(--primary);
+            background: rgba(143, 168, 155, 0.1);
+            border: 2px solid var(--primary-light);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 72px;
+            font-size: 80px;
             margin-bottom: 24px;
             transition: all 0.3s;
         }
 
         .meditation-circle.playing {
             border-color: var(--success);
-            background: rgba(136, 184, 146, 0.2);
+            background: rgba(155, 193, 163, 0.15);
+            box-shadow: 0 0 30px rgba(155, 193, 163, 0.2);
         }
 
         .phase-text {
             font-size: 1.3rem;
-            font-weight: 600;
+            font-weight: 500;
             text-align: center;
             margin-bottom: 8px;
+            color: var(--primary-dark);
         }
 
         .time-text {
             color: var(--text-secondary);
+            margin-bottom: 16px;
+            min-height: 20px;
         }
 
         .rate-indicator {
-            background: rgba(184, 169, 201, 0.3);
+            background: rgba(155, 193, 163, 0.2);
             padding: 8px 16px;
-            border-radius: 12px;
-            margin-top: 16px;
-        }
-
-        .rate-text {
+            border-radius: 20px;
+            color: var(--primary-dark);
             font-size: 0.85rem;
-            color: var(--secondary);
+            font-weight: 500;
         }
 
         .session-controls {
@@ -397,8 +805,9 @@
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 48px;
+            font-size: 56px;
             transition: transform 0.2s;
+            color: var(--primary);
         }
 
         .control-btn:hover {
@@ -406,43 +815,39 @@
         }
 
         .cancel-btn {
-            margin-top: 24px;
+            margin-top: 30px;
             color: var(--text-light);
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem;
+            text-decoration: underline;
         }
 
         .completed-container {
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             text-align: center;
         }
 
         .completed-icon {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            background: rgba(136, 184, 146, 0.2);
+            background: var(--success);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 64px;
+            font-size: 48px;
+            color: white;
             margin-bottom: 24px;
         }
 
         .completed-title {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 12px;
-        }
-
-        .completed-subtitle {
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 32px;
         }
 
         .completed-actions {
@@ -450,347 +855,2088 @@
             flex-direction: column;
             gap: 12px;
             width: 100%;
-        }
-
-        .completed-actions .btn {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .breathe-text {
-            color: var(--primary);
-            font-style: italic;
-            font-size: 1.1rem;
-        }
-
-        .session-wave {
             margin-top: 24px;
         }
 
-        .session-wave .wave-bar {
+        /* Game Answer/Admin Styles Simplified */
+        .sequence-display {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 24px;
+            min-height: 60px;
+        }
+
+        .sequence-item {
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: var(--primary-light);
+            color: var(--text-primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .order-num {
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .answer-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .answer-btn {
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .answer-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .answer-btn.selected {
+            background: var(--primary);
+            color: white;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .admin-header {
+            background: var(--primary);
+            color: white;
+            padding: 24px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Admin Enhanced Styles */
+        .admin-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            flex: 1;
+            min-width: 200px;
+            font-size: 0.9rem;
+        }
+
+        .filter-select {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            background: white;
+            color: var(--text-secondary);
+        }
+
+        .users-table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .users-table th {
+            text-align: left;
+            padding: 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .users-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .users-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .users-table tr:hover {
+            background-color: var(--background);
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-right: 12px;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background: #f5f5f5;
+            color: #757575;
+        }
+
+        /* User Details Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            border-radius: 24px;
+            padding: 32px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .activity-timeline {
+            margin-top: 24px;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .activity-item {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .activity-dot {
+            position: absolute;
+            left: -25px;
+            /* Adjust based on padding of timeline */
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        .activity-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .activity-card {
+            background: var(--background);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .activity-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            color: var(--text-light);
+            font-size: 0.75rem;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        /* Admin Dashboard Container */
+        .admin-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+            /* Wider for dashboard */
+        }
+
+        .admin-container.active {
+            display: flex;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .close-modal-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0 8px;
+        }
+
+        .activity-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .activity-item {
+            position: relative;
+            padding-left: 24px;
+            border-left: 2px solid #eee;
+        }
+
+        .activity-dot {
+            position: absolute;
+            left: -5px;
+            top: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
             background: var(--primary);
         }
+
+        .activity-date {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .activity-card {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
     </style>
+
 </head>
+
 <body>
     <div class="container">
-        <!-- Home Screen -->
-        <div class="home-container" id="homeScreen">
-            <h1>🧘 Yoga Meditation</h1>
-            <p class="subtitle">Record or upload your intention</p>
-            
-            <div class="lotus">🪷</div>
-
-            <div class="section">
-                <h3 class="section-title">Record Your Voice</h3>
-                <p class="section-desc">Share your intention, affirmation, or mantra</p>
-                
-                <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
-                    <div class="record-btn-inner" id="recordBtnInner">
-                        <span id="micIcon">🎙️</span>
-                        <div class="stop-icon" id="stopIcon" style="display: none;"></div>
+        <!-- Login Screen -->
+        <div class="auth-container" id="loginScreen">
+            <div class="auth-card">
+                <div class="logo-container">
+                    <div class="logo-circle">G</div>
+                    <h1>G Power Yoga</h1>
+                </div>
+                <h2 class="auth-title">Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to your sanctuary</p>
+                <div class="auth-error" id="loginError" style="display: none;"></div>
+                <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input"
+                        id="loginEmail" placeholder="Enter your email"></div>
+                <div class="form-group"><label class="form-label">Password</label><input type="password"
+                        class="form-input" id="loginPassword" placeholder="Enter your password"></div><button
+                    class="auth-btn auth-btn-primary" onclick="handleLogin()">Sign In</button>
+                <div class="auth-divider">
+                    <div class="auth-divider-line"></div><span class="auth-divider-text">or</span>
+                    <div class="auth-divider-line"></div>
+                    <button class="auth-btn auth-btn-google" onclick="handleGoogleSignIn()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" style="margin-right: 12px;">
+                            <path
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                fill="#4285F4" />
+                            <path
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                fill="#34A853" />
+                            <path
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                fill="#FBBC05" />
+                            <path
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                fill="#EA4335" />
+                        </svg>
+                        Sign in with Google
+                    </button>
+                    <div class="auth-divider"></div><button class="auth-btn auth-btn-admin"
+                        onclick="showAdminLogin()">Admin
+                        Access</button>
+                    <p class="auth-switch">New here? <a onclick="showSignup()">Create Account</a></p>
+                </div>
+            </div>
+            <!-- Signup Screen -->
+            <div class="auth-container hidden" id="signupScreen">
+                <div class="auth-card">
+                    <div class="logo-container">
+                        <div class="logo-circle">G</div>
+                        <h1>G Power Yoga</h1>
                     </div>
-                </button>
-
-                <div class="recording-indicator" id="recordingIndicator" style="display: none;">
-                    <div class="wave-animation">
-                        <div class="wave-bar"></div>
-                        <div class="wave-bar"></div>
+                    <h2 class="auth-title">Begin Your Journey</h2>
+                    <div class="auth-error" id="signupError" style="display: none;"></div>
+                    <div class="form-group"><label class="form-label">Full Name</label><input type="text"
+                            class="form-input" id="signupName" placeholder="Enter your name"></div>
+                    <div class="form-group"><label class="form-label">Email</label><input type="email"
+                            class="form-input" id="signupEmail" placeholder="Enter your email"></div>
+                    <div class="form-group"><label class="form-label">Password</label><input type="password"
+                            class="form-input" id="signupPassword" placeholder="Create a password"></div>
+                    <div class="form-group"><label class="form-label">Confirm Password</label><input type="password"
+                            class="form-input" id="signupConfirmPassword" placeholder="Confirm password"></div>
+                    <button class="auth-btn auth-btn-primary" onclick="handleSignup()">Create Account</button>
+                    <p class="auth-switch">Already a member? <a onclick="showLogin()">Sign In</a></p>
+                </div>
+            </div>
+            <!-- Admin Login -->
+            <div class="auth-container hidden" id="adminLoginScreen">
+                <div class="auth-card">
+                    <div class="logo-container">
+                        <div class="logo-circle">G</div>
+                        <h1>G Power Yoga</h1>
+                    </div>
+                    <h2 class="auth-title">Admin Portal</h2>
+                    <div class="auth-error" id="adminLoginError" style="display: none;"></div>
+                    <div class="form-group"><input type="email" class="form-input" id="adminEmail"
+                            placeholder="Admin email"></div>
+                    <div class="form-group"><input type="password" class="form-input" id="adminPassword"
+                            placeholder="Admin password"></div><button class="auth-btn auth-btn-admin"
+                        onclick="handleAdminLogin()">Access Dashboard</button>
+                    <p class="auth-switch"><a onclick="showLogin()">← Back</a></p>
+                </div>
+            </div>
+            <!-- Admin Dashboard -->
+            <div class="admin-container" id="adminDashboard">
+                <div class="admin-header">
+                    <div>
+                        <h2 class="admin-title" style="font-size:1.4rem;">Admin Dashboard</h2>
+                        <small>Overview</small>
+                    </div>
+                    <div style="display: flex; gap: 10px;"><button class="refresh-btn"
+                            onclick="loadAdminData()">Refresh</button><button class="logout-btn"
+                            onclick="handleLogout()">Logout</button></div>
+                </div>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalUsers">0</div>
+                        <div class="stat-label">Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalLogins">0</div>
+                        <div class="stat-label">Logins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeToday">0</div>
+                        <div class="stat-label">Active Today</div>
+                    </div>
+                </div>
+                <h3 style="margin: 20px 0 12px; font-weight: 500;">Meditation Stats</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="meditationsStarted">0</div>
+                        <div class="stat-label">Started</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="meditationsCompleted">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="completionRate">0%</div>
+                        <div class="stat-label">Rate</div>
+                    </div>
+                </div>
+                <div id="usersList" style="width: 100%;"></div>
+            </div>
+            <!-- Home Screen -->
+            <div class="home-container hidden" id="homeScreen">
+                <div class="welcome-banner" id="welcomeBanner">
+                    <div><span class="welcome-text">Namaste,
+                            <span class="welcome-name" id="userName">User</span></span></div><button class="logout-btn"
+                        onclick="handleLogout()">Logout</button>
+                </div>
+                <div class="logo-container">
+                    <div class="logo-circle">G</div>
+                    <h1>G Power Yoga</h1>
+                </div>
+                <p class="subtitle">Mind,
+                    Body,
+                    and Soul Connection</p>
+                <div class="mode-selector"><button class="mode-btn active" id="meditationModeBtn"
+                        onclick="selectMode('meditation')"><span
+                            class="mode-icon">🧘</span><span>Meditation</span></button><button class="mode-btn"
+                        id="gameModeBtn" onclick="selectMode('game')"><span class="mode-icon">🧠</span><span>Memory
+                            Game</span></button></div>
+                <div id="meditationModeContent">
+                    <div class="section">
+                        <h3 class="section-title">Record Your Voice</h3>
+                        <p class="section-desc">Share your intention,
+                            affirmation,
+                            or mantra</p><button class="record-btn" id="recordBtn" onclick="toggleRecording()">
+                            <div class="record-btn-inner" id="recordBtnInner"><span id="micIcon">🎙️</span>
+                                <div class="stop-icon" id="stopIcon" style="display: none;"></div>
+                            </div>
+                        </button>
+                        <div class="recording-indicator" id="recordingIndicator" style="display: none;">
+                            <div class="wave-animation">
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                            </div>
+                            <p class="recording-text">Recording... <span id="recordingTime">00:00</span>
+                            </p>
+                        </div>
+                        <div class="audio-ready" id="recordedAudioReady" style="display: none;"><span
+                                class="audio-ready-icon">✓</span><span class="audio-ready-text">Recording saved (<span
+                                    id="recordedDuration">00:00</span>)</span></div>
+                    </div>
+                    <div class="divider">
+                        <div class="divider-line"></div><span class="divider-text">OR</span>
+                        <div class="divider-line"></div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">Upload Audio</h3>
+                        <p class="section-desc">Select a pre-recorded audio file</p><input type="file"
+                            id="audioFileInput" class="file-input" accept="audio/*"
+                            onchange="handleFileUpload(event)"><button class="btn btn-outline"
+                            onclick="document.getElementById('audioFileInput').click()"><span>📁</span><span
+                                id="uploadBtnText">Choose Audio File</span></button>
+                        <div class="audio-ready" id="uploadedAudioReady" style="display: none;"><span
+                                class="audio-ready-icon">✓</span><span class="audio-ready-text">Audio
+                                file selected</span></div>
+                    </div>
+                    <div class="section customization-section" id="customizationSection" style="display: none;">
+                        <h3 class="section-title">Session Settings</h3>
+                        <div class="setting-row"><label class="setting-label">Playback Speed:</label>
+                            <div class="speed-options"><button class="speed-btn" data-speed="0.25"
+                                    onclick="selectSpeed(0.25)">0.25x</button><button class="speed-btn" data-speed="0.5"
+                                    onclick="selectSpeed(0.5)">0.5x</button><button class="speed-btn active"
+                                    data-speed="0.75" onclick="selectSpeed(0.75)">0.75x</button></div>
+                        </div>
+                        <div class="setting-row"><label class="setting-label">Repeat Count:</label>
+                            <div class="repeat-options"><button class="repeat-btn" data-repeat="1"
+                                    onclick="selectRepeat(1)">1x</button><button class="repeat-btn" data-repeat="2"
+                                    onclick="selectRepeat(2)">2x</button><button class="repeat-btn active"
+                                    data-repeat="3" onclick="selectRepeat(3)">3x</button><button class="repeat-btn"
+                                    data-repeat="4" onclick="selectRepeat(4)">4x</button><button class="repeat-btn"
+                                    data-repeat="5" onclick="selectRepeat(5)">5x</button></div>
+                        </div>
+                    </div>
+                    <div class="action-buttons"><button class="btn btn-outline" id="clearBtn"
+                            style="display: none; flex: 0.4;" onclick="clearAudio()">Clear</button><button
+                            class="btn btn-primary" id="beginBtn" disabled onclick="beginSession()">Begin
+                            Session</button>
+                    </div>
+                </div>
+                <div id="gameModeContent" style="display: none;">
+                    <div class="game-section">
+                        <h3 class="section-title">Choose Category</h3>
+                        <p class="section-desc">Select what you want to memorize</p>
+                        <div class="category-options"><button class="category-btn active" data-category="flowers"
+                                onclick="selectCategory('flowers')"><span>🌸</span>Flowers</button><button
+                                class="category-btn" data-category="colors"
+                                onclick="selectCategory('colors')"><span>🎨</span>Colors</button><button
+                                class="category-btn" data-category="numbers"
+                                onclick="selectCategory('numbers')"><span>🔢</span>Numbers</button>
+                        </div>
+                        <div class="setting-row" style="margin-top: 20px;"><label class="setting-label"
+                                style="text-align: center;">Difficulty (items):</label>
+                            <div class="difficulty-options"><button class="difficulty-btn" data-difficulty="3"
+                                    onclick="selectDifficulty(3)">3</button><button class="difficulty-btn active"
+                                    data-difficulty="5" onclick="selectDifficulty(5)">5</button><button
+                                    class="difficulty-btn" data-difficulty="7" onclick="selectDifficulty(7)">7</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-buttons"><button class="btn btn-primary"
+                            onclick="beginGameSession()"><span>🎮</span>Start Memory Game</button></div>
+                </div>
+            </div>
+            <!-- Session Screen -->
+            <div class="session-container" id="sessionScreen">
+                <h1>Meditation Session</h1>
+                <p class="subtitle" id="sessionSubtitle">Namaste</p>
+                <div class="progress-steps" id="progressSteps"></div>
+                <div id="sessionContent">
+                    <div class="meditation-circle" id="meditationCircle"><span id="meditationEmoji">🧘</span></div>
+                    <div class="session-wave wave-animation" id="sessionWave" style="display: none;">
                         <div class="wave-bar"></div>
                         <div class="wave-bar"></div>
                         <div class="wave-bar"></div>
                     </div>
-                    <p class="recording-text">Recording... <span id="recordingTime">00:00</span></p>
+                    <p class="phase-text" id="phaseText">Preparing...</p>
+                    <p class="time-text" id="timeText"></p>
+                    <div class="rate-indicator" id="rateIndicator" style="display: none;"><span
+                            class="rate-text">Playing at
+                            0.75x speed</span></div>
+                    <div class="session-controls" id="sessionControls" style="display: none;">
+                        <button class="control-btn" id="pauseResumeBtn" onclick="togglePauseResume()">⏸️</button>
+                    </div><button class="cancel-btn" id="cancelBtn" onclick="endSession()">End
+                        Session</button>
                 </div>
-
-                <div class="audio-ready" id="recordedAudioReady" style="display: none;">
-                    <span class="audio-ready-icon">✓</span>
-                    <span class="audio-ready-text">Recording saved (<span id="recordedDuration">00:00</span>)</span>
-                </div>
-            </div>
-
-            <div class="divider">
-                <div class="divider-line"></div>
-                <span class="divider-text">OR</span>
-                <div class="divider-line"></div>
-            </div>
-
-            <div class="section">
-                <h3 class="section-title">Upload Audio</h3>
-                <p class="section-desc">Select a pre-recorded audio file</p>
-                
-                <input type="file" id="audioFileInput" class="file-input" accept="audio/*" onchange="handleFileUpload(event)">
-                <button class="btn btn-outline" onclick="document.getElementById('audioFileInput').click()">
-                    <span>📁</span>
-                    <span id="uploadBtnText">Choose Audio File</span>
-                </button>
-
-                <div class="audio-ready" id="uploadedAudioReady" style="display: none;">
-                    <span class="audio-ready-icon">✓</span>
-                    <span class="audio-ready-text">Audio file selected</span>
+                <div class="completed-container" id="completedContainer">
+                    <div class="completed-icon">✨</div>
+                    <h2 class="completed-title">Session Complete</h2>
+                    <div class="completed-actions"><button class="btn btn-primary" id="downloadSessionBtn"
+                            onclick="downloadSession()" style="display: none;">Download</button><button
+                            class="btn btn-primary" onclick="repeatSession()">Repeat</button><button
+                            class="btn btn-outline" onclick="newSession()">New Session</button></div>
                 </div>
             </div>
-
-            <div class="action-buttons">
-                <button class="btn btn-outline" id="clearBtn" style="display: none; flex: 0.4;" onclick="clearAudio()">Clear</button>
-                <button class="btn btn-primary" id="beginBtn" disabled onclick="beginSession()">Begin Session</button>
+            <!-- Game Answer Screen -->
+            <div class="game-answer-container" id="gameAnswerScreen">
+                <h1>Memory Challenge</h1>
+                <p class="subtitle">Recall the sequence</p>
+                <div id="gameAnswerContent" style="width: 100%;">
+                    <p class="section-desc">Select items in order</p>
+                    <div class="sequence-display" id="sequenceDisplay"></div>
+                    <div class="answer-options" id="answerOptions"></div>
+                    <div class="action-buttons"><button class="btn btn-outline"
+                            onclick="resetGameAnswer()">Reset</button><button class="btn btn-primary"
+                            id="submitAnswerBtn" onclick="submitGameAnswer()" disabled>Submit</button></div>
+                </div>
+                <div class="completed-container" id="gameResultContainer">
+                    <div class="completed-icon" id="resultIcon">🎉</div>
+                    <h2 class="completed-title" id="resultTitle">Great Job !</h2>
+                    <div class="score-display">
+                        <div class="stat-value" id="scoreValue">0/5</div>
+                    </div>
+                    <div id="scoreBreakdown" style="width: 100%; margin: 20px 0;"></div>
+                    <div class="completed-actions"><button class="btn btn-primary" onclick="playGameAgain()">Play
+                            Again</button><button class="btn btn-outline" onclick="backToHome()">Home</button></div>
+                </div>
             </div>
         </div>
+        <script> // =====================
 
-        <!-- Session Screen -->
-        <div class="session-container" id="sessionScreen">
-            <h1>🧘 Meditation Session</h1>
-            <p class="subtitle" id="sessionSubtitle">Namaste</p>
-
-            <div class="progress-steps" id="progressSteps">
-                <!-- Generated by JS -->
-            </div>
-
-            <div id="sessionContent">
-                <div class="meditation-circle" id="meditationCircle">
-                    <span id="meditationEmoji">🧘</span>
-                </div>
-
-                <div class="session-wave wave-animation" id="sessionWave" style="display: none;">
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                </div>
-
-                <p class="phase-text" id="phaseText">Preparing your session...</p>
-                <p class="time-text" id="timeText"></p>
-
-                <div class="rate-indicator" id="rateIndicator" style="display: none;">
-                    <span class="rate-text">Playing at 0.75x speed (relaxed pace)</span>
-                </div>
-
-                <div class="session-controls" id="sessionControls" style="display: none;">
-                    <button class="control-btn" id="pauseResumeBtn" onclick="togglePauseResume()">⏸️</button>
-                </div>
-
-                <button class="cancel-btn" id="cancelBtn" onclick="endSession()">End Session</button>
-            </div>
-
-            <!-- Completed State -->
-            <div class="completed-container" id="completedContainer" style="display: none;">
-                <div class="completed-icon">✨</div>
-                <h2 class="completed-title">Your meditation session is complete</h2>
-                <p class="completed-subtitle">Take a moment to notice how you feel. Carry this peace with you throughout your day.</p>
-                
-                <div class="completed-actions">
-                    <button class="btn btn-primary" onclick="repeatSession()">Repeat This Session</button>
-                    <button class="btn btn-outline" onclick="newSession()">New Session</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // State
-        let isRecording = false;
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let recordedBlob = null;
-        let uploadedFile = null;
-        let recordingStartTime = null;
-        let recordingTimer = null;
-        let recordingDuration = 0;
-
-        // Session state
-        let currentPhase = 'preparing';
-        let sessionAudioUrl = null;
-        let introAudio = null;
-        let userAudio = null;
-        let closingAudio = null;
-        let isPaused = false;
-        let pauseTimeout = null;
-
-        const PHASES = ['intro', 'user_audio_1', 'pause', 'user_audio_2', 'closing'];
-        const PHASE_LABELS = ['Intro', 'Your Audio', 'Repeat', 'Closing'];
-        const PLAYBACK_RATE = 0.75;
-        const PAUSE_DURATION = 3000;
-
-        // Format time as MM:SS
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        // Toggle recording
-        async function toggleRecording() {
-            if (isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
-        }
-
-        // Start recording
-        async function startRecording() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = (e) => {
-                    audioChunks.push(e.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    uploadedFile = null;
-                    updateUI();
-                };
-
-                mediaRecorder.start();
-                isRecording = true;
-                recordingStartTime = Date.now();
-                recordingDuration = 0;
-
-                // Update UI
-                document.getElementById('recordBtn').classList.add('recording');
-                document.getElementById('micIcon').style.display = 'none';
-                document.getElementById('stopIcon').style.display = 'block';
-                document.getElementById('recordingIndicator').style.display = 'flex';
-                document.getElementById('recordedAudioReady').style.display = 'none';
-
-                // Start timer
-                recordingTimer = setInterval(() => {
-                    recordingDuration = Math.floor((Date.now() - recordingStartTime) / 1000);
-                    document.getElementById('recordingTime').textContent = formatTime(recordingDuration);
-                }, 1000);
-
-            } catch (err) {
-                alert('Could not access microphone. Please grant permission.');
-                console.error(err);
-            }
-        }
-
-        // Stop recording
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            }
-            isRecording = false;
-            clearInterval(recordingTimer);
-
-            // Update UI
-            document.getElementById('recordBtn').classList.remove('recording');
-            document.getElementById('micIcon').style.display = 'block';
-            document.getElementById('stopIcon').style.display = 'none';
-            document.getElementById('recordingIndicator').style.display = 'none';
-            document.getElementById('recordedAudioReady').style.display = 'flex';
-            document.getElementById('recordedDuration').textContent = formatTime(recordingDuration);
-        }
-
-        // Handle file upload
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                uploadedFile = file;
-                recordedBlob = null;
-                recordingDuration = 0;
-                updateUI();
-            }
-        }
-
-        // Update UI based on state
-        function updateUI() {
-            const hasAudio = recordedBlob || uploadedFile;
-            document.getElementById('beginBtn').disabled = !hasAudio;
-            document.getElementById('clearBtn').style.display = hasAudio ? 'block' : 'none';
-            
-            if (uploadedFile) {
-                document.getElementById('uploadBtnText').textContent = 'Change Audio File';
-                document.getElementById('uploadedAudioReady').style.display = 'flex';
-                document.getElementById('recordedAudioReady').style.display = 'none';
-            } else {
-                document.getElementById('uploadBtnText').textContent = 'Choose Audio File';
-                document.getElementById('uploadedAudioReady').style.display = 'none';
-            }
-        }
-
-        // Clear audio
-        function clearAudio() {
-            recordedBlob = null;
-            uploadedFile = null;
-            recordingDuration = 0;
-            document.getElementById('audioFileInput').value = '';
-            document.getElementById('recordedAudioReady').style.display = 'none';
-            document.getElementById('uploadedAudioReady').style.display = 'none';
-            updateUI();
-        }
-
-        // Begin session
-        function beginSession() {
-            if (recordedBlob) {
-                sessionAudioUrl = URL.createObjectURL(recordedBlob);
-            } else if (uploadedFile) {
-                sessionAudioUrl = URL.createObjectURL(uploadedFile);
+            // FIREBASE CONFIGURATION
+            // =====================
+            const firebaseConfig = {
+                apiKey: "AIzaSyDxRHmvH4n9b1eVJ_gcrDZWsbnom825_4U",
+                authDomain: "gpower-yoga-app.firebaseapp.com",
+                projectId: "gpower-yoga-app",
+                storageBucket: "gpower-yoga-app.firebasestorage.app",
+                messagingSenderId: "963138608500",
+                appId: "1:963138608500:web:efa380d1f0bada20b96021"
             }
 
-            document.getElementById('homeScreen').classList.add('hidden');
-            document.getElementById('sessionScreen').classList.add('active');
-            
-            startSession();
-        }
+                ;
 
-        // Render progress steps
-        function renderProgressSteps(currentStep) {
-            const container = document.getElementById('progressSteps');
-            container.innerHTML = '';
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
 
-            PHASE_LABELS.forEach((label, index) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'step-wrapper';
+            // Admin credentials (in production, this should be server-side)
+            const ADMIN_EMAIL = "admin@yogameditation.com";
+            const ADMIN_PASSWORD = "admin123";
 
-                const step = document.createElement('div');
-                step.className = 'step';
-                if (index < currentStep) step.classList.add('completed');
-                if (index === currentStep) step.classList.add('active');
-                step.textContent = index + 1;
+            // Auth State
+            let currentUser = null;
+            let isAdmin = false;
 
-                const labelEl = document.createElement('div');
-                labelEl.className = 'step-label';
-                if (index === currentStep) labelEl.classList.add('active');
-                labelEl.textContent = label;
+            // =====================
+            // AUTH FUNCTIONS
+            // =====================
 
-                wrapper.appendChild(step);
-                wrapper.appendChild(labelEl);
-                container.appendChild(wrapper);
+            // Check auth state on load
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
 
-                if (index < PHASE_LABELS.length - 1) {
-                    const connector = document.createElement('div');
-                    connector.className = 'connector';
-                    if (index < currentStep) connector.classList.add('completed');
-                    container.appendChild(connector);
+                    // Check if admin
+                    if (user.email === ADMIN_EMAIL) {
+                        isAdmin = true;
+                        showAdminDashboard();
+                    }
+
+                    else {
+                        isAdmin = false;
+                        await loadUserData();
+                        // Log user login
+                        showHome();
+                    }
+                }
+
+                else {
+                    currentUser = null;
+                    isAdmin = false;
+                    showLogin();
                 }
             });
-        }
 
-        // Start session
-        async function startSession() {
-            currentPhase = 'intro';
-            renderProgressSteps(0);
-            await playPhase();
-        }
+            // Show login screen
+            function showLogin() {
+                hideAllScreens();
+                document.getElementById('loginScreen').classList.remove('hidden');
+            }
 
-        // Play current phase
-        async function playPhase() {
-            const circle = document.getElementById('meditationCircle');
-            const phaseText = document.getElementById('phaseText');
-            const timeText = document.getElementById('timeText');
-            const rateIndicator = document.getElementById('rateIndicator');
-            const sessionWave = document.getElementById('sessionWave');
-            const controls = document.getElementById('sessionControls');
-            const emoji = document.getElementById('meditationEmoji');
+            // Show signup screen
+            function showSignup() {
+                hideAllScreens();
+                document.getElementById('signupScreen').classList.remove('hidden');
+            }
 
-            switch (currentPhase) {
-                case 'intro':
+            // Show admin login screen
+            function showAdminLogin() {
+                hideAllScreens();
+                document.getElementById('adminLoginScreen').classList.remove('hidden');
+            }
+
+            // Show home screen
+            function showHome() {
+                hideAllScreens();
+                document.getElementById('homeScreen').classList.remove('hidden');
+
+                if (currentUser) {
+                    updateWelcomeBanner();
+                }
+            }
+
+            // Show admin dashboard
+            function showAdminDashboard() {
+                hideAllScreens();
+                document.getElementById('adminDashboard').classList.add('active');
+                loadAdminData();
+            }
+
+            // Hide all screens
+            function hideAllScreens() {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('signupScreen').classList.add('hidden');
+                document.getElementById('adminLoginScreen').classList.add('hidden');
+                document.getElementById('homeScreen').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('active');
+                document.getElementById('sessionScreen').classList.remove('active');
+                document.getElementById('gameAnswerScreen').classList.remove('active');
+            }
+
+            // Handle signup
+            async function handleSignup() {
+                const name = document.getElementById('signupName').value.trim();
+                const email = document.getElementById('signupEmail').value.trim();
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('signupConfirmPassword').value;
+                const errorEl = document.getElementById('signupError');
+
+                // Validation
+                if (!name || !email || !password) {
+                    showError(errorEl, 'Please fill in all fields');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showError(errorEl, 'Password must be at least 6 characters');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showError(errorEl, 'Passwords do not match');
+                    return;
+                }
+
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+
+                    // Save user data to Firestore
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        name: name,
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        activities: []
+                    });
+
+                    // Update display name
+                    await userCredential.user.updateProfile({
+                        displayName: name
+                    });
+
+                    errorEl.style.display = 'none';
+                }
+
+                catch (error) {
+                    showError(errorEl, error.message);
+                }
+            }
+
+            // Handle login
+            async function handleLogin() {
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                const errorEl = document.getElementById('loginError');
+
+                if (!email || !password) {
+                    showError(errorEl, 'Please enter email and password');
+                    return;
+                }
+
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    errorEl.style.display = 'none';
+                }
+
+                catch (error) {
+                    showError(errorEl, 'Invalid email or password');
+                }
+            }
+
+            // Handle admin login
+            async function handleAdminLogin() {
+                const email = document.getElementById('adminEmail').value.trim();
+                const password = document.getElementById('adminPassword').value;
+                const errorEl = document.getElementById('adminLoginError');
+
+                if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                    try {
+                        // Try to sign in first
+                        await auth.signInWithEmailAndPassword(email, password);
+                        errorEl.style.display = 'none';
+                    }
+
+                    catch (signinError) {
+
+                        // If sign-in fails, try to create the account (auto-provisioning for admin)
+                        // We check for various error codes that imply the user might not exist or auth failed
+                        if (signinError.code === 'auth/user-not-found' || signinError.code === 'auth/invalid-credential' || signinError.code === 'auth/wrong-password') {
+                            try {
+                                await auth.createUserWithEmailAndPassword(email, password);
+
+                                // Initialize admin user data if just created
+                                await db.collection('users').doc(firebase.auth().currentUser.uid).set({
+                                    name: 'Administrator',
+                                    email: email,
+                                    role: 'admin',
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                });
+
+                                errorEl.style.display = 'none';
+                            }
+
+                            catch (createError) {
+
+                                // If creation fails (e.g. email exists but password was wrong initially), report it
+                                if (createError.code === 'auth/email-already-in-use') {
+                                    showError(errorEl, 'Admin account already exists. Please check if the password in the code matches the one in Firebase.');
+                                }
+
+                                else {
+                                    showError(errorEl, "Creation Error: " + createError.message);
+                                }
+                            }
+                        }
+
+                        else {
+                            showError(errorEl, signinError.message);
+                        }
+                    }
+                }
+
+                else {
+                    showError(errorEl, 'Invalid admin credentials configured in system.');
+                }
+            }
+
+            // Handle Google Sign-In
+            async function handleGoogleSignIn() {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    const result = await auth.signInWithPopup(provider);
+                    const user = result.user;
+
+                    // Check if user exists in database, if not create entry
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+
+                    if (!userDoc.exists) {
+                        await db.collection('users').doc(user.uid).set({
+                            name: user.displayName || 'User',
+                            email: user.email,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            activities: [],
+                            signInMethod: 'google'
+                        });
+                    }
+
+                    // Auth state change will handle navigation
+                }
+
+                catch (error) {
+                    console.error('Google Sign-In Error:', error);
+                    // Show error on whichever screen is visible
+                    const loginError = document.getElementById('loginError');
+                    const signupError = document.getElementById('signupError');
+
+                    if (!document.getElementById('loginScreen').classList.contains('hidden')) {
+                        showError(loginError, error.message);
+                    }
+
+                    else {
+                        showError(signupError, error.message);
+                    }
+                }
+            }
+
+            // Handle logout
+            async function handleLogout() {
+                await auth.signOut();
+                showLogin();
+            }
+
+            // Show error message
+            function showError(element, message) {
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+
+            // Load user data
+            async function loadUserData() {
+                if (!currentUser) return;
+
+                try {
+                    const doc = await db.collection('users').doc(currentUser.uid).get();
+
+                    if (doc.exists) {
+                        const data = doc.data();
+                        document.getElementById('userName').textContent = data.name || currentUser.displayName || 'User';
+                    }
+                }
+
+                catch (e) {
+                    console.error('Error loading user data:', e);
+                }
+            }
+
+            // Update welcome banner
+            function updateWelcomeBanner() {
+                if (currentUser) {
+                    const name = currentUser.displayName || 'User';
+                    document.getElementById('userName').textContent = name;
+                }
+            }
+
+            // Log activity
+            async function logActivity(type, details = {}) {
+                if (!currentUser || isAdmin) return;
+
+                try {
+                    const activity = {
+                        type: type,
+                        details: details,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }
+
+                        ;
+
+                    await db.collection('users').doc(currentUser.uid).update({
+                        activities: firebase.firestore.FieldValue.arrayUnion(activity)
+                    });
+                }
+
+                catch (e) {
+                    console.error('Error logging activity:', e);
+                }
+            }
+
+            // Load admin data
+            // Admin - Load Data
+            let allUsers = [];
+            let filteredUsers = [];
+
+            function upgradeAdminDashboardUI() {
+                const dashboard = document.getElementById('adminDashboard');
+                // If already upgraded, just return/update
+                if (document.getElementById('userSearch')) return;
+
+                dashboard.innerHTML = `
+                <div class="admin-header">
+                    <div>
+                        <h2 class="admin-title" style="font-size:1.6rem; font-weight:700;">Admin Dashboard</h2>
+                        <span style="opacity:0.9; font-size:0.95rem;">Overview & Analytics</span>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="refresh-btn" onclick="loadAdminData()">
+                            <span>↻</span> Refresh
+                        </button>
+                        <button class="logout-btn" onclick="handleLogout()" style="background:rgba(255,255,255,0.2); border:none; padding:8px 16px; border-radius:12px; color:white; cursor:pointer;">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-value" id="totalUsers">0</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-value" id="activeToday">0</div>
+                        <div class="stat-label">Active Today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🧘‍♀️</div>
+                        <div class="stat-value" id="meditationsStarted">0</div>
+                        <div class="stat-label">Sessions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎮</div>
+                        <div class="stat-value" id="meditationsCompleted">0</div>
+                        <div class="stat-label">Games Played</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value" id="completionRate">0</div>
+                        <div class="stat-label">Avg Sessions/User</div>
+                    </div>
+                </div>
+
+                <div style="margin: 32px 0 24px; display: flex; gap: 16px; flex-wrap: wrap; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05);">
+                    <div style="flex: 1; min-width: 250px;">
+                        <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary); font-size:0.85rem;">SEARCH</label>
+                        <input type="text" id="userSearch" placeholder="Search by name or email..." class="search-input" style="width:100%;" onkeyup="filterUsers()">
+                    </div>
+                    
+                    <div style="flex: 0 0 auto;">
+                        <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary); font-size:0.85rem;">STATUS</label>
+                        <select id="statusFilter" class="filter-select" onchange="filterUsers()">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                     <div style="flex: 0 0 auto;">
+                        <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary); font-size:0.85rem;">SORT BY</label>
+                         <select id="sortFilter" class="filter-select" onchange="filterUsers()">
+                            <option value="activity">Last Active</option>
+                            <option value="newest">Joined Date</option>
+                            <option value="name">Name</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th>USER INFO</th>
+                                <th>STATUS</th>
+                                <th>SESSIONS</th>
+                                <th>GAMES</th>
+                                <th>LAST ACTIVE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            `;
+            }
+
+            async function loadAdminData() {
+                // Inject UI upgrades
+                if (!document.getElementById('userDetailsModal')) {
+                    const modalHtml = `
+                <div id="userDetailsModal" class="modal-overlay">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div>
+                                <h3 class="modal-title" id="modalUserName">User Name</h3>
+                                <p class="modal-subtitle" id="modalUserEmail">user@example.com</p>
+                            </div>
+                            <button class="close-modal-btn" onclick="closeUserDetails()">×</button>
+                        </div>
+                        <div class="activity-timeline" id="userActivityTimeline"></div>
+                    </div>
+                </div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                }
+
+                upgradeAdminDashboardUI();
+
+                try {
+                    // Fetch all users
+                    const usersSnapshot = await db.collection('users').get();
+                    allUsers = [];
+
+                    // Process users
+                    usersSnapshot.forEach(doc => {
+                        const data = doc.data();
+
+                        if (data.email !== ADMIN_EMAIL) {
+                            const activities = data.activities || [];
+                            const lastActiveStr = activities.length > 0 ? activities[activities.length - 1].timestamp : data.createdAt;
+
+                            // Handle potential different timestamp formats (Firestore Timestamp vs JS Date)
+                            let lastActiveDate;
+
+                            if (lastActiveStr && typeof lastActiveStr.toDate === 'function') {
+                                lastActiveDate = lastActiveStr.toDate();
+                            }
+
+                            else {
+                                lastActiveDate = new Date(lastActiveStr || 0); // Fallback
+                            }
+
+                            // Calculate stats
+                            const meditations = activities.filter(a => a.type === 'meditation_complete').length;
+                            const games = activities.filter(a => a.type === 'game_complete');
+                            const bestScore = games.length > 0 ? Math.max(...games.map(g => g.details.score)) : 0;
+
+                            allUsers.push({
+
+                                id: doc.id,
+                                name: data.name || 'User',
+                                email: data.email,
+                                createdAt: data.createdAt,
+                                lastActive: lastActiveDate,
+                                activities: activities,
+                                stats: {
+                                    meditations: meditations,
+                                    gamesPlayed: games.length,
+                                    bestGameScore: bestScore
+                                }
+                            });
+                        }
+                    });
+
+                    // Sort by last active desc initially
+                    allUsers.sort((a, b) => b.lastActive - a.lastActive);
+
+                    filteredUsers = [...allUsers];
+                    renderAdminStats();
+                    renderUsersTable();
+
+                }
+
+                catch (e) {
+                    console.error('Error loading admin data:', e);
+                }
+            }
+
+            function renderAdminStats() {
+                // Calculate aggregations
+                const totalUsers = allUsers.length;
+                const now = new Date();
+                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+                let activeTodayCount = 0;
+                let totalMeditations = 0;
+                let totalGames = 0;
+
+                allUsers.forEach(u => {
+                    totalMeditations += u.stats.meditations;
+                    totalGames += u.stats.gamesPlayed;
+
+                    // Check active today
+                    if (u.lastActive >= startOfDay) activeTodayCount++;
+                });
+
+                document.getElementById('totalUsers').textContent = totalUsers;
+                document.getElementById('activeToday').textContent = activeTodayCount;
+                document.getElementById('meditationsStarted').textContent = totalMeditations;
+                document.getElementById('meditationsCompleted').textContent = totalGames;
+                document.getElementById('completionRate').textContent = totalUsers > 0 ? Math.round(totalMeditations / totalUsers) : 0;
+            }
+
+            function filterUsers() {
+                const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+                const statusFilter = document.getElementById('statusFilter').value;
+                const sortFilter = document.getElementById('sortFilter').value;
+
+                filteredUsers = allUsers.filter(user => {
+                    const matchesSearch = user.name.toLowerCase().includes(searchTerm) || user.email.toLowerCase().includes(searchTerm);
+
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const isActive = user.lastActive > thirtyDaysAgo;
+
+                    const matchesStatus = statusFilter === 'all' ? true : statusFilter === 'active' ? isActive : !isActive;
+
+                    return matchesSearch && matchesStatus;
+                });
+
+                // Sort
+                filteredUsers.sort((a, b) => {
+                    if (sortFilter === 'newest') {
+                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+                        return dateB - dateA;
+                    }
+
+                    else if (sortFilter === 'activity') {
+                        return b.lastActive - a.lastActive;
+                    }
+
+                    else if (sortFilter === 'name') {
+                        return a.name.localeCompare(b.name);
+                    }
+                });
+
+                renderUsersTable();
+            }
+
+            function renderUsersTable() {
+                const tableBody = document.getElementById('usersTableBody');
+                if (!tableBody) return;
+
+                if (filteredUsers.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found matching filters</td></tr>';
+                    return;
+                }
+
+                tableBody.innerHTML = filteredUsers.map(user => {
+                    const initials = user.name.charAt(0).toUpperCase();
+                    const lastActiveStr = user.lastActive.getFullYear() > 1970 ? user.lastActive.toLocaleDateString() : 'Never';
+
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const isActive = user.lastActive > thirtyDaysAgo;
+                    const statusClass = isActive ? 'status-active' : 'status-inactive';
+                    const statusText = isActive ? 'Active' : 'Inactive';
+
+                    return ` <tr onclick="showUserDetails('${user.id}')" > <td> <div class="user-cell" > <div class="user-avatar" >$ {
+                        initials
+                    }
+
+                    </div> <div> <div style="font-weight:600" >$ {
+                        user.name
+                    }
+
+                    </div> <div style="font-size:0.8rem; color:#888" >$ {
+                        user.email
+                    }
+
+                    </div> </div> </div> </td> <td><span class="status-badge ${statusClass}" >$ {
+                        statusText
+                    }
+
+                    </span></td> <td>$ {
+                        user.stats.meditations
+                    }
+
+                    </td> <td>$ {
+                        user.stats.gamesPlayed
+                    }
+
+                    (High: $ {
+                            user.stats.bestGameScore
+
+                        })</td> <td>$ {
+                        lastActiveStr
+                    }
+
+                    </td> </tr> `;
+                }).join('');
+            }
+
+            function showUserDetails(userId) {
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) return;
+
+                document.getElementById('modalUserName').textContent = user.name;
+                document.getElementById('modalUserEmail').textContent = user.email;
+
+                // Render specific activity timeline
+                const timeline = document.getElementById('userActivityTimeline');
+
+                if (!user.activities || user.activities.length === 0) {
+                    timeline.innerHTML = '<div class="empty-state">No activity history recorded.</div>';
+                }
+
+                else {
+
+                    // Sort activities new to old
+                    const sortedActivities = [...user.activities].sort((a, b) => {
+                        const tA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                        const tB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+                        return tB - tA;
+                    });
+
+                    timeline.innerHTML = sortedActivities.map(act => {
+                        const date = act.timestamp?.toDate ? act.timestamp.toDate() : new Date(act.timestamp);
+                        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+                        let title = '';
+                        let detailsHtml = '';
+
+                        if (act.type === 'meditation_start') {
+                            title = '🧘 Started Meditation';
+
+                            detailsHtml = ` <div class="detail-item" ><span class="detail-label" >Speed</span><span class="detail-value" >$ {
+                                act.details.speed
+                            }
+
+                            x</span></div> <div class="detail-item" ><span class="detail-label" >Repeats</span><span class="detail-value" >$ {
+                                act.details.repeat
+                            }
+
+                            </span></div> `;
+                        }
+
+                        else if (act.type === 'meditation_complete') {
+                            title = '✅ Completed Session';
+                            detailsHtml = ``;
+                        }
+
+                        else if (act.type === 'game_start') {
+                            title = '🎮 Started Memory Game';
+
+                            detailsHtml = ` <div class="detail-item" ><span class="detail-label" >Category</span><span class="detail-value" >$ {
+                                act.details.category
+                            }
+
+                            </span></div> <div class="detail-item" ><span class="detail-label" >Level</span><span class="detail-value" >$ {
+                                act.details.difficulty
+                            }
+
+                            </span></div> `;
+                        }
+
+                        else if (act.type === 'game_complete') {
+                            title = '🏆 Finished Game';
+
+                            detailsHtml = ` <div class="detail-item" ><span class="detail-label" >Score</span><span class="detail-value" style="color:var(--primary)" >$ {
+                                act.details.score
+                            }
+
+                            /$ {
+                                act.details.total
+                            }
+
+                            </span></div> `;
+                        }
+
+                        return ` <div class="activity-item" > <div class="activity-dot" ></div> <div class="activity-date" >$ {
+                            dateStr
+                        }
+
+                        </div> <div class="activity-card" > <div class="activity-title" >$ {
+                            title
+                        }
+
+                        </div> <div class="activity-details" >$ {
+                            detailsHtml
+                        }
+
+                        </div> </div> </div> `;
+                    }).join('');
+                }
+
+                document.getElementById('userDetailsModal').classList.add('active');
+            }
+
+            function closeUserDetails() {
+                document.getElementById('userDetailsModal').classList.remove('active');
+            }
+
+            // =====================
+            // ORIGINAL APP STATE
+            // =====================
+
+            // State
+            let isRecording = false;
+            let mediaRecorder = null;
+            let audioChunks = [];
+            let recordedBlob = null;
+            let uploadedFile = null;
+            let recordingStartTime = null;
+            let recordingTimer = null;
+            let recordingDuration = 0;
+
+            // Session state
+            let currentPhase = 'preparing';
+            let sessionAudioUrl = null;
+            let userAudio = null;
+            let currentPlayingAudio = null; // Track any currently playing audio
+            let sessionActive = false; // Flag to track if session is active
+            let isPaused = false;
+            let pauseTimeout = null;
+
+            // Customizable settings
+            let selectedSpeed = 0.75;
+            let selectedRepeat = 3;
+            let PHASES = [];
+            let PHASE_LABELS = [];
+
+            // Session recording for download
+            let sessionRecorder = null;
+            let sessionRecordingChunks = [];
+            let sessionRecordingBlob = null;
+            let audioContext = null;
+            let sessionDestination = null;
+            let currentPlayCount = 0;
+
+            // Game Mode State & Data
+            let currentMode = 'meditation';
+            let selectedCategory = 'flowers';
+            let selectedDifficulty = 5;
+            let gameSequence = [];
+            let userSequence = [];
+
+            const GAME_DATA = {
+
+                flowers: ['Rose',
+                    'Lily',
+                    'Lotus',
+                    'Jasmine',
+                    'Marigold',
+                    'Sunflower',
+                    'Tulip',
+                    'Daisy',
+                    'Hibiscus'],
+                colors: ['Red',
+                    'Blue',
+                    'Green',
+                    'Yellow',
+                    'Orange',
+                    'Pink',
+                    'White',
+                    'Black',
+                    'Purple',
+                    'Golden'],
+                numbers: Array.from({
+                    length: 41
+                }
+
+                    , (_, i) => (i + 10).toString())
+            }
+
+                ;
+
+            const PAUSE_DURATION = 3000;
+
+            // =====================
+            // MODE & GAME FUNCTIONS
+            // =====================
+
+            // Select mode
+            function selectMode(mode) {
+                currentMode = mode;
+                document.getElementById('meditationModeBtn').classList.toggle('active', mode === 'meditation');
+                document.getElementById('gameModeBtn').classList.toggle('active', mode === 'game');
+                document.getElementById('meditationModeContent').style.display = mode === 'meditation' ? 'block' : 'none';
+                document.getElementById('gameModeContent').style.display = mode === 'game' ? 'block' : 'none';
+            }
+
+            // Select game category
+            function selectCategory(category) {
+                selectedCategory = category;
+
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.category === category);
+                });
+            }
+
+            // Select difficulty
+            function selectDifficulty(difficulty) {
+                selectedDifficulty = difficulty;
+
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.classList.toggle('active', parseInt(btn.dataset.difficulty) === difficulty);
+                });
+            }
+
+            // Generate unique random sequence
+            function generateSequence() {
+                const items = [...GAME_DATA[selectedCategory]];
+                return items.sort(() => Math.random() - 0.5).slice(0, selectedDifficulty);
+            }
+
+            // Begin game session
+            function beginGameSession() {
+                gameSequence = generateSequence();
+                userSequence = [];
+
+                logActivity('game_start', {
+                    category: selectedCategory, difficulty: selectedDifficulty
+                });
+
+                document.getElementById('homeScreen').classList.add('hidden');
+                document.getElementById('sessionScreen').classList.add('active');
+
+                document.getElementById('sessionSubtitle').textContent = 'Listen carefully...';
+                document.getElementById('phaseText').textContent = 'Get ready to listen...';
+                document.getElementById('progressSteps').innerHTML = '';
+                document.getElementById('meditationEmoji').textContent = '🧠';
+                document.getElementById('sessionControls').style.display = 'none';
+                document.getElementById('rateIndicator').style.display = 'none';
+
+                // Start speaking
+                setTimeout(() => speakSequence(), 1500);
+            }
+
+            // Speak the sequence
+            async function speakSequence() {
+                const phaseText = document.getElementById('phaseText');
+                const timeText = document.getElementById('timeText');
+                const sessionWave = document.getElementById('sessionWave');
+                const circle = document.getElementById('meditationCircle');
+
+                sessionWave.style.display = 'flex';
+                circle.classList.add('playing');
+
+                for (let i = 0; i < gameSequence.length; i++) {
+                    const item = gameSequence[i];
+
+                    phaseText.textContent = `Listen: Item $ {
+                    i+1
+                }
+
+                of $ {
+                    gameSequence.length
+                }
+
+                `;
+                    timeText.innerHTML = `<span class="listening-text">🔊 Speaking...</span>`;
+                    await speakText(item);
+
+                    if (i < gameSequence.length - 1) {
+                        phaseText.textContent = '...';
+                        timeText.textContent = '';
+                        await sleep(1500);
+                    }
+                }
+
+                sessionWave.style.display = 'none';
+                circle.classList.remove('playing');
+                phaseText.textContent = 'Sequence complete!';
+                setTimeout(() => showGameAnswerScreen(), 2000);
+            }
+
+            // Text-to-speech
+            function speakText(text) {
+                return new Promise((resolve) => {
+                    if ('speechSynthesis' in window) {
+                        speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.rate = 0.8;
+                        utterance.onend = resolve;
+                        utterance.onerror = resolve;
+                        speechSynthesis.speak(utterance);
+                    }
+
+                    else {
+                        setTimeout(resolve, 1000);
+                    }
+                });
+            }
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            // Show game answer screen
+            function showGameAnswerScreen() {
+                document.getElementById('sessionScreen').classList.remove('active');
+                document.getElementById('gameAnswerScreen').classList.add('active');
+                userSequence = [];
+                renderAnswerOptions();
+                updateSequenceDisplay();
+            }
+
+            function renderAnswerOptions() {
+                const container = document.getElementById('answerOptions');
+                const shuffledOptions = [...gameSequence].sort(() => Math.random() - 0.5);
+
+                container.innerHTML = shuffledOptions.map(item => ` <button class="answer-btn" data-item="${item}" onclick="selectAnswer('${item}')" >$ {
+                    item
+                }
+
+                </button> `).join('');
+            }
+
+            function selectAnswer(item) {
+                if (userSequence.includes(item)) return;
+                userSequence.push(item);
+                document.querySelector(`.answer-btn[data-item="${item}"]`).classList.add('selected');
+                updateSequenceDisplay();
+                document.getElementById('submitAnswerBtn').disabled = userSequence.length < gameSequence.length;
+            }
+
+            function updateSequenceDisplay() {
+                document.getElementById('sequenceDisplay').innerHTML = userSequence.map((item, index) => ` <div class="sequence-item" ><span class="order-num" >$ {
+                    index + 1
+                }
+
+                </span>$ {
+                    item
+                }
+
+                </div> `).join('');
+            }
+
+            function resetGameAnswer() {
+                userSequence = [];
+                updateSequenceDisplay();
+                document.querySelectorAll('.answer-btn').forEach(btn => btn.classList.remove('selected'));
+                document.getElementById('submitAnswerBtn').disabled = true;
+            }
+
+            function submitGameAnswer() {
+                let correctCount = 0;
+                const results = [];
+
+                for (let i = 0; i < gameSequence.length; i++) {
+                    const isCorrect = userSequence[i] === gameSequence[i];
+                    if (isCorrect) correctCount++;
+
+                    results.push({
+                        position: i + 1, expected: gameSequence[i], given: userSequence[i], correct: isCorrect
+                    });
+                }
+
+                showGameResult(correctCount, results);
+            }
+
+            function showGameResult(correctCount, results) {
+                document.getElementById('gameAnswerContent').style.display = 'none';
+                document.getElementById('gameResultContainer').style.display = 'flex';
+
+                document.getElementById('scoreValue').textContent = `$ {
+                correctCount
+            }
+
+            /$ {
+                gameSequence.length
+            }
+
+            `;
+
+                const breakdownHtml = results.map(r => ` <div style="display: flex; align-items: center; gap: 8px; margin: 4px 0; justify-content:center;" > <span>$ {
+                    r.correct ? '✅' : '❌'
+                }
+
+                </span> <span style="color: ${r.correct ? 'var(--success)' : 'var(--error)'}" >$ {
+                    r.given
+                }
+
+                </span> </div> `).join('');
+                document.getElementById('scoreBreakdown').innerHTML = breakdownHtml;
+
+                logActivity('game_complete', {
+                    score: correctCount, total: gameSequence.length
+                });
+            }
+
+            function playGameAgain() {
+                document.getElementById('gameAnswerContent').style.display = 'block';
+                document.getElementById('gameResultContainer').style.display = 'none';
+                document.getElementById('gameAnswerScreen').classList.remove('active');
+                beginGameSession();
+            }
+
+            function backToHome() {
+                document.getElementById('gameAnswerContent').style.display = 'block';
+                document.getElementById('gameResultContainer').style.display = 'none';
+                document.getElementById('gameAnswerScreen').classList.remove('active');
+                document.getElementById('sessionScreen').classList.remove('active');
+                document.getElementById('homeScreen').classList.remove('hidden');
+            }
+
+            // =====================
+            // ORIGINAL FUNCTIONS
+            // =====================
+
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+
+                return `$ {
+                mins.toString().padStart(2, '0')
+            }
+
+            :$ {
+                secs.toString().padStart(2, '0')
+            }
+
+            `;
+            }
+
+            async function toggleRecording() {
+                if (isRecording) {
+                    stopRecording();
+                }
+
+                else {
+                    startRecording();
+                }
+            }
+
+            async function startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        audio: true
+                    });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+                    mediaRecorder.onstop = () => {
+                        recordedBlob = new Blob(audioChunks, {
+                            type: 'audio/webm'
+                        });
+                        uploadedFile = null;
+                        updateUI();
+                    }
+
+                        ;
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordingStartTime = Date.now();
+                    document.getElementById('recordBtn').classList.add('recording');
+                    document.getElementById('micIcon').style.display = 'none';
+                    document.getElementById('stopIcon').style.display = 'block';
+                    document.getElementById('recordingIndicator').style.display = 'flex';
+                    document.getElementById('recordedAudioReady').style.display = 'none';
+
+                    recordingTimer = setInterval(() => {
+                        recordingDuration = Math.floor((Date.now() - recordingStartTime) / 1000);
+                        document.getElementById('recordingTime').textContent = formatTime(recordingDuration);
+                    }
+
+                        , 1000);
+                }
+
+                catch (err) {
+                    alert('Could not access microphone.');
+                }
+            }
+
+            function stopRecording() {
+                if (mediaRecorder) {
+                    mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+
+                isRecording = false;
+                clearInterval(recordingTimer);
+                document.getElementById('recordBtn').classList.remove('recording');
+                document.getElementById('micIcon').style.display = 'block';
+                document.getElementById('stopIcon').style.display = 'none';
+                document.getElementById('recordingIndicator').style.display = 'none';
+                document.getElementById('recordedAudioReady').style.display = 'flex';
+                document.getElementById('recordedDuration').textContent = formatTime(recordingDuration);
+            }
+
+            function handleFileUpload(event) {
+                const file = event.target.files[0];
+
+                if (file) {
+                    uploadedFile = file;
+                    recordedBlob = null;
+                    recordingDuration = 0;
+                    updateUI();
+                }
+            }
+
+            function updateUI() {
+                const hasAudio = recordedBlob || uploadedFile;
+                document.getElementById('beginBtn').disabled = !hasAudio;
+                document.getElementById('clearBtn').style.display = hasAudio ? 'block' : 'none';
+                document.getElementById('customizationSection').style.display = hasAudio ? 'block' : 'none';
+
+                if (uploadedFile) {
+                    document.getElementById('uploadBtnText').textContent = 'Change Audio File';
+                    document.getElementById('uploadedAudioReady').style.display = 'flex';
+                    document.getElementById('recordedAudioReady').style.display = 'none';
+                }
+
+                else {
+                    document.getElementById('uploadBtnText').textContent = 'Choose Audio File';
+                    document.getElementById('uploadedAudioReady').style.display = 'none';
+                }
+            }
+
+            function selectSpeed(speed) {
+                selectedSpeed = speed;
+
+                document.querySelectorAll('.speed-btn').forEach(btn => {
+                    btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
+                });
+
+                document.querySelector('.rate-text').textContent = `Playing at $ {
+                speed
+            }
+
+            x speed`;
+            }
+
+            function selectRepeat(count) {
+                selectedRepeat = count;
+
+                document.querySelectorAll('.repeat-btn').forEach(btn => {
+                    btn.classList.toggle('active', parseInt(btn.dataset.repeat) === count);
+                });
+            }
+
+            function buildPhases() {
+                PHASES = ['intro'];
+                PHASE_LABELS = ['Intro'];
+
+                for (let i = 1; i <= selectedRepeat; i++) {
+                    PHASES.push(`user_audio_$ {
+                        i
+                    }
+
+                    `);
+
+                    if (i < selectedRepeat) PHASES.push(`pause_$ {
+                        i
+                    }
+
+                    `);
+                }
+
+                PHASES.push('closing', 'completed');
+                if (selectedRepeat === 1) PHASE_LABELS = ['Intro',
+                    'Your Audio',
+                    'Closing'];
+
+                else {
+                    PHASE_LABELS = ['Intro',
+                        'Your Audio'];
+
+                    for (let i = 2; i <= selectedRepeat; i++) PHASE_LABELS.push(`Play $ {
+                        i
+                    }
+
+                    `);
+                    PHASE_LABELS.push('Closing');
+                }
+            }
+
+            function clearAudio() {
+                recordedBlob = null;
+                uploadedFile = null;
+                updateUI();
+            }
+
+            function beginSession() {
+                if (recordedBlob) sessionAudioUrl = URL.createObjectURL(recordedBlob);
+                else if (uploadedFile) sessionAudioUrl = URL.createObjectURL(uploadedFile);
+
+                logActivity('meditation_start', {
+                    speed: selectedSpeed, repeat: selectedRepeat
+                });
+                buildPhases();
+                startSessionRecording();
+
+                document.getElementById('homeScreen').classList.add('hidden');
+                document.getElementById('sessionScreen').classList.add('active');
+                startSession();
+            }
+
+            function startSessionRecording() {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    sessionDestination = audioContext.createMediaStreamDestination();
+                    sessionRecordingChunks = [];
+                    sessionRecorder = new MediaRecorder(sessionDestination.stream);
+
+                    sessionRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) sessionRecordingChunks.push(e.data);
+                    }
+
+                        ;
+
+                    sessionRecorder.onstop = () => {
+                        sessionRecordingBlob = new Blob(sessionRecordingChunks, {
+                            type: 'audio/webm'
+                        });
+                    }
+
+                        ;
+                    sessionRecorder.start();
+                }
+
+                catch (e) {
+                    console.error(e);
+                }
+            }
+
+            function stopSessionRecording() {
+                try {
+                    if (sessionRecorder) sessionRecorder.stop();
+                    if (audioContext) audioContext.close();
+                }
+
+                catch (e) { }
+            }
+
+            function downloadSession() {
+                if (sessionRecordingBlob) {
+                    const url = URL.createObjectURL(sessionRecordingBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `meditation.webm`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            }
+
+            function renderProgressSteps(currentStep) {
+                const container = document.getElementById('progressSteps');
+                container.innerHTML = '';
+
+                PHASE_LABELS.forEach((label, index) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'step-wrapper';
+                    const step = document.createElement('div');
+                    step.className = 'step';
+                    if (index < currentStep) step.classList.add('completed');
+                    if (index === currentStep) step.classList.add('active');
+                    step.textContent = index + 1;
+                    const labelEl = document.createElement('div');
+                    labelEl.className = 'step-label';
+                    if (index === currentStep) labelEl.classList.add('active');
+                    labelEl.textContent = label;
+                    wrapper.appendChild(step);
+                    wrapper.appendChild(labelEl);
+                    container.appendChild(wrapper);
+
+                    if (index < PHASE_LABELS.length - 1) {
+                        const connector = document.createElement('div');
+                        connector.className = 'connector';
+                        if (index < currentStep) connector.classList.add('completed');
+                        container.appendChild(connector);
+                    }
+                });
+            }
+
+            async function startSession() {
+                sessionActive = true;
+                currentPhase = 'intro';
+                renderProgressSteps(0);
+                await playPhase();
+            }
+
+            async function playPhase() {
+                if (!sessionActive) return;
+                const circle = document.getElementById('meditationCircle');
+                const phaseText = document.getElementById('phaseText');
+                const timeText = document.getElementById('timeText');
+                const rateIndicator = document.getElementById('rateIndicator');
+                const sessionWave = document.getElementById('sessionWave');
+                const controls = document.getElementById('sessionControls');
+
+                const stepIndex = getStepIndex();
+
+                if (currentPhase === 'intro') {
                     renderProgressSteps(0);
                     phaseText.textContent = 'Opening meditation...';
                     timeText.textContent = '';
@@ -798,183 +2944,179 @@
                     circle.classList.add('playing');
                     sessionWave.style.display = 'flex';
                     controls.style.display = 'block';
-                    
-                    introAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-                    // Use a simple tone for intro (in production, use real audio file)
-                    await playTone(440, 3);
+                    await playAudioFile('first.mp3');
                     nextPhase();
-                    break;
+                }
 
-                case 'user_audio_1':
-                    renderProgressSteps(1);
-                    phaseText.textContent = 'Playing your intention (1st time)...';
-                    rateIndicator.style.display = 'block';
-                    
-                    userAudio = new Audio(sessionAudioUrl);
-                    userAudio.playbackRate = PLAYBACK_RATE;
-                    userAudio.onended = () => nextPhase();
-                    userAudio.ontimeupdate = () => {
-                        timeText.textContent = `${formatTime(userAudio.currentTime)} / ${formatTime(userAudio.duration || 0)}`;
-                    };
-                    await userAudio.play();
-                    break;
-
-                case 'pause':
-                    renderProgressSteps(1);
-                    phaseText.textContent = 'Take a deep breath...';
-                    timeText.innerHTML = '<span class="breathe-text">Breathe deeply...</span>';
-                    rateIndicator.style.display = 'none';
-                    sessionWave.style.display = 'none';
-                    controls.style.display = 'none';
-                    emoji.textContent = '🌸';
-                    
-                    pauseTimeout = setTimeout(() => {
-                        emoji.textContent = '🧘';
-                        nextPhase();
-                    }, PAUSE_DURATION);
-                    break;
-
-                case 'user_audio_2':
-                    renderProgressSteps(2);
-                    phaseText.textContent = 'Playing your intention (2nd time)...';
+                else if (currentPhase.startsWith('user_audio_')) {
+                    const playNum = parseInt(currentPhase.split('_')[2]);
+                    renderProgressSteps(stepIndex);
+                    phaseText.textContent = `Playing your intention...`;
                     rateIndicator.style.display = 'block';
                     sessionWave.style.display = 'flex';
                     controls.style.display = 'block';
-                    
-                    userAudio = new Audio(sessionAudioUrl);
-                    userAudio.playbackRate = PLAYBACK_RATE;
-                    userAudio.onended = () => nextPhase();
-                    userAudio.ontimeupdate = () => {
-                        timeText.textContent = `${formatTime(userAudio.currentTime)} / ${formatTime(userAudio.duration || 0)}`;
-                    };
-                    await userAudio.play();
-                    break;
 
-                case 'closing':
-                    renderProgressSteps(3);
+                    userAudio = new Audio(sessionAudioUrl);
+                    userAudio.playbackRate = selectedSpeed;
+
+                    if (audioContext && sessionDestination) {
+                        try {
+                            const source = audioContext.createMediaElementSource(userAudio);
+                            source.connect(sessionDestination);
+                            source.connect(audioContext.destination);
+                        }
+
+                        catch (e) { }
+                    }
+
+                    userAudio.onended = () => nextPhase();
+
+                    userAudio.ontimeupdate = () => {
+                        timeText.textContent = `$ {
+                        formatTime(userAudio.currentTime)
+                    }
+
+                    / $ {
+                        formatTime(userAudio.duration || 0)
+                    }
+
+                    `;
+                    }
+
+                        ;
+                    await userAudio.play();
+                }
+
+                else if (currentPhase.startsWith('pause_')) {
+                    renderProgressSteps(stepIndex);
+                    phaseText.textContent = 'Take a deep breath...';
+                    timeText.innerHTML = 'Breathe...';
+                    rateIndicator.style.display = 'none';
+                    sessionWave.style.display = 'none';
+                    pauseTimeout = setTimeout(() => nextPhase(), PAUSE_DURATION);
+                }
+
+                else if (currentPhase === 'closing') {
+                    renderProgressSteps(PHASE_LABELS.length - 1);
                     phaseText.textContent = 'Closing meditation...';
                     timeText.textContent = '';
                     rateIndicator.style.display = 'none';
-                    
-                    await playTone(330, 3);
+                    await playAudioFile('last.mp3');
                     nextPhase();
-                    break;
+                }
 
-                case 'completed':
+                else if (currentPhase === 'completed') {
+                    stopSessionRecording();
                     showCompleted();
-                    break;
-            }
-        }
-
-        // Play a simple tone (placeholder for real audio)
-        function playTone(frequency, duration) {
-            return new Promise((resolve) => {
-                try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-
-                    oscillator.frequency.value = frequency;
-                    oscillator.type = 'sine';
-
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + duration);
-
-                    setTimeout(resolve, duration * 1000);
-                } catch (e) {
-                    setTimeout(resolve, duration * 1000);
-                }
-            });
-        }
-
-        // Next phase
-        function nextPhase() {
-            const phases = ['intro', 'user_audio_1', 'pause', 'user_audio_2', 'closing', 'completed'];
-            const currentIndex = phases.indexOf(currentPhase);
-            if (currentIndex < phases.length - 1) {
-                currentPhase = phases[currentIndex + 1];
-                playPhase();
-            }
-        }
-
-        // Toggle pause/resume
-        function togglePauseResume() {
-            const btn = document.getElementById('pauseResumeBtn');
-            if (userAudio) {
-                if (isPaused) {
-                    userAudio.play();
-                    btn.textContent = '⏸️';
-                    isPaused = false;
-                } else {
-                    userAudio.pause();
-                    btn.textContent = '▶️';
-                    isPaused = true;
                 }
             }
-        }
 
-        // Show completed state
-        function showCompleted() {
-            document.getElementById('sessionContent').style.display = 'none';
-            document.getElementById('completedContainer').style.display = 'flex';
-            document.getElementById('cancelBtn').style.display = 'none';
-            renderProgressSteps(4);
-        }
+            function getStepIndex() {
+                if (currentPhase === 'intro') return 0;
+                if (currentPhase === 'closing') return PHASE_LABELS.length - 1;
+                if (currentPhase.startsWith('user_audio_')) return Math.min(parseInt(currentPhase.split('_')[2]), PHASE_LABELS.length - 2);
+                if (currentPhase.startsWith('pause_')) return Math.min(parseInt(currentPhase.split('_')[1]) + 1, PHASE_LABELS.length - 2);
+                return 0;
+            }
 
-        // End session
-        function endSession() {
-            if (confirm('Are you sure you want to end this meditation session?')) {
+            function playAudioFile(filename) {
+                return new Promise((resolve) => {
+                    const audio = new Audio(filename);
+                    currentPlayingAudio = audio;
+
+                    audio.onended = () => {
+                        currentPlayingAudio = null; resolve();
+                    }
+
+                        ;
+                    audio.play().catch(() => setTimeout(resolve, 3000));
+                });
+            }
+
+            function nextPhase() {
+                if (!sessionActive) return;
+                const currentIndex = PHASES.indexOf(currentPhase);
+
+                if (currentIndex < PHASES.length - 1) {
+                    currentPhase = PHASES[currentIndex + 1];
+                    playPhase();
+                }
+            }
+
+            // Toggle pause/resume - Corrected for all phases
+            function togglePauseResume() {
+                const btn = document.getElementById('pauseResumeBtn');
+                const audioToControl = userAudio || currentPlayingAudio;
+
+                if (audioToControl) {
+                    if (isPaused) {
+                        audioToControl.play();
+                        btn.textContent = '⏸️';
+                        isPaused = false;
+                    }
+
+                    else {
+                        audioToControl.pause();
+                        btn.textContent = '▶️';
+                        isPaused = true;
+                    }
+                }
+            }
+
+            function showCompleted() {
+                document.getElementById('sessionContent').style.display = 'none';
+                document.getElementById('completedContainer').style.display = 'flex';
+                document.getElementById('cancelBtn').style.display = 'none';
+                document.getElementById('downloadSessionBtn').style.display = sessionRecordingBlob ? 'flex' : 'none';
+                renderProgressSteps(PHASE_LABELS.length);
+            }
+
+            function endSession() {
+                if (confirm('End session?')) {
+                    resetSession();
+                }
+            }
+
+            function repeatSession() {
+                document.getElementById('sessionContent').style.display = 'block';
+                document.getElementById('completedContainer').style.display = 'none';
+                document.getElementById('cancelBtn').style.display = 'block';
+                currentPhase = 'intro';
+                isPaused = false;
+                startSessionRecording();
+                startSession();
+            }
+
+            function newSession() {
                 resetSession();
             }
-        }
 
-        // Repeat session
-        function repeatSession() {
-            document.getElementById('sessionContent').style.display = 'block';
-            document.getElementById('completedContainer').style.display = 'none';
-            document.getElementById('cancelBtn').style.display = 'block';
-            currentPhase = 'intro';
-            isPaused = false;
-            startSession();
-        }
+            function resetSession() {
+                try {
+                    if (userAudio) {
+                        userAudio.pause();
+                        userAudio = null;
+                    }
 
-        // New session
-        function newSession() {
-            resetSession();
-        }
+                    if (currentPlayingAudio) {
+                        currentPlayingAudio.pause();
+                        currentPlayingAudio = null;
+                    }
+                }
 
-        // Reset session
-        function resetSession() {
-            // Stop any playing audio
-            if (userAudio) {
-                userAudio.pause();
-                userAudio = null;
-            }
-            if (pauseTimeout) {
-                clearTimeout(pauseTimeout);
+                catch (e) { }
+
+                if (pauseTimeout) clearTimeout(pauseTimeout);
+                stopSessionRecording();
+                sessionActive = false;
+                currentPhase = 'preparing';
+                document.getElementById('sessionContent').style.display = 'block';
+                document.getElementById('completedContainer').style.display = 'none';
+                document.getElementById('sessionScreen').classList.remove('active');
+                document.getElementById('homeScreen').classList.remove('hidden');
             }
 
-            // Reset state
-            currentPhase = 'preparing';
-            isPaused = false;
-
-            // Reset UI
-            document.getElementById('sessionContent').style.display = 'block';
-            document.getElementById('completedContainer').style.display = 'none';
-            document.getElementById('cancelBtn').style.display = 'block';
-            document.getElementById('meditationCircle').classList.remove('playing');
-            document.getElementById('meditationEmoji').textContent = '🧘';
-
-            // Go back to home
-            document.getElementById('sessionScreen').classList.remove('active');
-            document.getElementById('homeScreen').classList.remove('hidden');
-        }
-    </script>
+        </script>
 </body>
+
 </html>
