@@ -2505,8 +2505,20 @@
                     category: selectedCategory, difficulty: selectedDifficulty
                 });
 
-                document.getElementById('homeScreen').classList.add('hidden');
-                document.getElementById('sessionScreen').classList.add('active');
+                // Use shared navigation utility
+                try {
+                    // Hide all first
+                    document.getElementById('homeScreen').classList.add('hidden');
+                    document.getElementById('sessionScreen').classList.remove('active');
+
+                    // Then show session
+                    const sessionScreen = document.getElementById('sessionScreen');
+                    if (sessionScreen) {
+                        sessionScreen.classList.add('active');
+                        // Force layout refresh
+                        sessionScreen.style.display = 'flex';
+                    }
+                } catch (e) { console.error("Nav error:", e); }
 
                 document.getElementById('sessionSubtitle').textContent = 'Listen carefully...';
                 document.getElementById('phaseText').textContent = 'Get ready to listen...';
@@ -2561,7 +2573,8 @@
             function speakText(text) {
                 return new Promise((resolve) => {
                     if ('speechSynthesis' in window) {
-                        speechSynthesis.cancel();
+                        // Chrome bug fix: Cancel strictly before speaking
+                        window.speechSynthesis.cancel();
                         const utterance = new SpeechSynthesisUtterance(text);
                         utterance.rate = 0.8;
                         utterance.onend = resolve;
@@ -2875,8 +2888,13 @@
                 buildPhases();
                 startSessionRecording();
 
-                document.getElementById('homeScreen').classList.add('hidden');
-                document.getElementById('sessionScreen').classList.add('active');
+
+                try {
+                    document.getElementById('homeScreen').classList.add('hidden');
+                    const sessEl = document.getElementById('sessionScreen');
+                    sessEl.classList.add('active');
+                    sessEl.style.display = 'flex'; // Force display
+                } catch (e) { }
                 startSession();
             }
 
