@@ -1678,6 +1678,32 @@
             // AUTH FUNCTIONS
             // =====================
 
+            // Handle redirect result (for mobile Google Auth)
+            auth.getRedirectResult().then(async (result) => {
+                if (result.user) {
+                    // User just signed in via redirect
+                    // We let onAuthStateChanged handle the UI transition,
+                    // but we could do post-login logic here if needed.
+                    // Ensure user doc exists:
+                    const user = result.user;
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (!userDoc.exists) {
+                        try {
+                            await db.collection('users').doc(user.uid).set({
+                                name: user.displayName || 'User',
+                                email: user.email,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                activities: [],
+                                signInMethod: 'google'
+                            });
+                        } catch (e) { console.error("Redirect User creation error", e); }
+                    }
+                }
+            }).catch((error) => {
+                console.error("Redirect Auth Error:", error);
+                alert("Sign In Error: " + error.message);
+            });
+
             // Check auth state on load
             auth.onAuthStateChanged(async (user) => {
                 try {
@@ -1894,38 +1920,34 @@
             async function handleGoogleSignIn() {
                 try {
                     const provider = new firebase.auth.GoogleAuthProvider();
-                    const result = await auth.signInWithPopup(provider);
-                    const user = result.user;
+                    // On mobile, redirects are preferred over popups
+                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-                    // Check if user exists in database, if not create entry
-                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (isMobile) {
+                        await auth.signInWithRedirect(provider);
+                        // The page will unload here, logic continues in getRedirectResult
+                    } else {
+                        const result = await auth.signInWithPopup(provider);
+                        const user = result.user;
 
-                    if (!userDoc.exists) {
-                        await db.collection('users').doc(user.uid).set({
-                            name: user.displayName || 'User',
-                            email: user.email,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            activities: [],
-                            signInMethod: 'google'
-                        });
+                        // Check if user exists in database, if not create entry
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+
+                        if (!userDoc.exists) {
+                            await db.collection('users').doc(user.uid).set({
+                                name: user.displayName || 'User',
+                                email: user.email,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                activities: [],
+                                signInMethod: 'google'
+                            });
+                        }
                     }
-
-                    // Auth state change will handle navigation
                 }
 
                 catch (error) {
                     console.error('Google Sign-In Error:', error);
-                    // Show error on whichever screen is visible
-                    const loginError = document.getElementById('loginError');
-                    const signupError = document.getElementById('signupError');
-
-                    if (!document.getElementById('loginScreen').classList.contains('hidden')) {
-                        showError(loginError, error.message);
-                    }
-
-                    else {
-                        showError(signupError, error.message);
-                    }
+                    alert("Google Sign In Error: " + error.message);
                 }
             }
 
