@@ -331,6 +331,7 @@ let allUsers = [];
 let filteredUsers = [];
 
 window.loadAdminData = async function () {
+    console.log("Starting Admin Data Load...");
     if (!document.getElementById('userDetailsModal')) {
         const modalHtml = `
     <div id="userDetailsModal" class="modal-overlay">
@@ -351,10 +352,22 @@ window.loadAdminData = async function () {
     upgradeAdminDashboardUI();
 
     try {
-        const usersSnapshot = await db.collection('users').get();
+        const usersRef = db.collection('users');
+        const usersSnapshot = await usersRef.get();
+        console.log(`Fetched ${usersSnapshot.size} user documents.`);
+
+        if (usersSnapshot.empty) {
+            console.warn("No user documents found in 'users' collection.");
+            return;
+        }
+
         allUsers = [];
+        let skippedAdminCount = 0;
+
         usersSnapshot.forEach(doc => {
             const data = doc.data();
+            // console.log("Processing user:", data.email); // Debug individual users if needed
+
             if (data.email !== ADMIN_EMAIL) {
                 const activities = data.activities || [];
                 // Safer timestamp handling
@@ -383,8 +396,12 @@ window.loadAdminData = async function () {
                         bestGameScore: bestScore
                     }
                 });
+            } else {
+                skippedAdminCount++;
             }
         });
+
+        console.log(`Processed ${allUsers.length} users (skipped ${skippedAdminCount} admins).`);
 
         allUsers.sort((a, b) => b.lastActive - a.lastActive);
         filteredUsers = [...allUsers];
@@ -392,6 +409,11 @@ window.loadAdminData = async function () {
         renderUsersTable();
     } catch (e) {
         console.error('Error loading admin data:', e);
+        if (e.code === 'permission-denied') {
+            alert("ADMIN ACCESS DENIED: Your Firestore Security Rules are blocking access to user data.\n\nPlease update your Firestore rules in the Firebase Console to allow the admin to read all documents.");
+        } else {
+            alert("Error loading admin data: " + e.message);
+        }
     }
 }
 
@@ -613,7 +635,8 @@ let sessionActive = false;
 let isPaused = false;
 let pauseTimeout = null;
 
-let selectedSpeed = 0.75;
+let selectedSpeed = 1;
+let selectedVolume = 1;
 let selectedRepeat = 3;
 let PHASES = [];
 let PHASE_LABELS = [];
@@ -662,8 +685,93 @@ window.selectSpeed = function (speed) {
     document.querySelectorAll('.speed-btn').forEach(btn => {
         btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
     });
-    document.querySelector('.rate-text').textContent = `Playing at ${speed}x speed`;
+    const rateText = document.querySelector('.rate-text');
+    if (rateText) rateText.textContent = `Playing at ${speed}x speed`;
+
+    if (previewAudio) {
+        previewAudio.playbackRate = speed;
+    }
 }
+
+// Preview Logic
+let previewAudio = null;
+let previewTimeout = null;
+
+window.togglePreview = function () {
+    if (previewAudio) {
+        stopPreview();
+    } else {
+        startPreview();
+    }
+}
+
+function startPreview() {
+    if (!recordedBlob && !uploadedFile) return;
+
+    let src = '';
+    if (recordedBlob) src = URL.createObjectURL(recordedBlob);
+    else if (uploadedFile) src = URL.createObjectURL(uploadedFile);
+
+    if (!src) return;
+
+    // specific 15s preview as requested
+    previewAudio = new Audio(src);
+    previewAudio.playbackRate = selectedSpeed;
+    previewAudio.volume = selectedVolume;
+    previewAudio.onended = stopPreview;
+
+    previewAudio.play().then(() => {
+        const btnText = document.getElementById('previewBtnText');
+        if (btnText) btnText.textContent = 'Stop Preview';
+
+        const status = document.getElementById('previewStatus');
+        if (status) status.style.display = 'flex';
+
+        // Stop after 15 seconds
+        previewTimeout = setTimeout(() => {
+            stopPreview();
+        }, 15000);
+    }).catch(e => {
+        console.error("Preview error", e);
+        stopPreview();
+    });
+}
+
+function stopPreview() {
+    if (previewAudio) {
+        previewAudio.pause();
+        previewAudio.currentTime = 0; // Reset
+        previewAudio = null;
+    }
+    if (previewTimeout) {
+        clearTimeout(previewTimeout);
+        previewTimeout = null;
+    }
+
+    const btnText = document.getElementById('previewBtnText');
+    if (btnText) btnText.textContent = 'Preview Sound (15s)';
+
+    const status = document.getElementById('previewStatus');
+    if (status) status.style.display = 'none';
+}
+window.updateVolume = function (vol) {
+    selectedVolume = parseFloat(vol);
+    const volumeValueDisplay = document.getElementById('volumeValue');
+    if (volumeValueDisplay) volumeValueDisplay.textContent = `${Math.round(selectedVolume * 100)}%`;
+
+    // Update all sliders
+    const mainSlider = document.getElementById('volumeSlider');
+    if (mainSlider && mainSlider.value != vol) mainSlider.value = vol;
+
+    document.querySelectorAll('.session-volume-slider').forEach(slider => {
+        if (slider.value != vol) slider.value = vol;
+    });
+
+    if (previewAudio) previewAudio.volume = selectedVolume;
+    if (userAudio) userAudio.volume = selectedVolume;
+    if (currentPlayingAudio) currentPlayingAudio.volume = selectedVolume;
+}
+
 window.selectRepeat = function (count) {
     selectedRepeat = count;
     document.querySelectorAll('.repeat-btn').forEach(btn => {
@@ -681,6 +789,11 @@ window.handleFileUpload = function (event) {
     }
 }
 window.clearAudio = function () {
+    stopPreview();
+    if (sessionAudioUrl) {
+        URL.revokeObjectURL(sessionAudioUrl);
+        sessionAudioUrl = null;
+    }
     recordedBlob = null;
     uploadedFile = null;
     updateUI();
@@ -710,11 +823,28 @@ window.toggleRecording = async function () {
 async function startRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+        // iPhone/iOS compatibility: Use standard mp4/aac if available, otherwise fallback
+        let options = { mimeType: 'audio/webm' };
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            options = { mimeType: 'audio/mp4' };
+        } else if (MediaRecorder.isTypeSupported('audio/mp4;codecs=aac')) {
+            options = { mimeType: 'audio/mp4;codecs=aac' };
+        }
+
+        try {
+            mediaRecorder = new MediaRecorder(stream, options);
+        } catch (e) {
+            // Fallback to default if options fail
+            mediaRecorder = new MediaRecorder(stream);
+        }
+
         audioChunks = [];
-        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
         mediaRecorder.onstop = () => {
-            recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const type = options.mimeType || 'audio/webm';
+            recordedBlob = new Blob(audioChunks, { type: type });
             uploadedFile = null;
             updateUI();
         };
@@ -736,11 +866,11 @@ async function startRecording() {
 }
 
 function stopRecording() {
-    if (mediaRecorder) {
+    isRecording = false;  // Moved up to prevent races
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
-    isRecording = false;
     clearInterval(recordingTimer);
     document.getElementById('recordBtn').classList.remove('recording');
     document.getElementById('micIcon').style.display = 'block';
@@ -757,6 +887,8 @@ function formatTime(seconds) {
 }
 
 window.beginSession = function () {
+    if (sessionAudioUrl) URL.revokeObjectURL(sessionAudioUrl);
+
     if (recordedBlob) sessionAudioUrl = URL.createObjectURL(recordedBlob);
     else if (uploadedFile) sessionAudioUrl = URL.createObjectURL(uploadedFile);
 
@@ -765,15 +897,32 @@ window.beginSession = function () {
     // Build phases
     PHASES = ['intro'];
     PHASE_LABELS = ['Intro'];
+    // Correct Logic for Repeats:
+    // Intro -> (User Audio -> Pause) * (Repeat - 1) -> User Audio -> Closing
+    // The previous logic added a pause after the last repeat if i < selectedRepeat, which is correct for between-repeats.
+    // Let's verify the loop.
+    // Repeat = 2:
+    // i=1: push user_audio_1. i < 2 is true. push pause_1.
+    // i=2: push user_audio_2. i < 2 is false.
+    // Result: Intro, user_audio_1, pause_1, user_audio_2, closing. Correct.
+    // Repeat = 5:
+    // i=1..4: user_audio_i, pause_i
+    // i=5: user_audio_5
+    // Result: Intro, u1, p1, u2, p2, u3, p3, u4, p4, u5, closing. Correct.
+    // The bug reported ("played for 2 times then stops") suggests an issue in execution, not array construction.
+
+    // We will use the same loop logic but ensure clear naming.
     for (let i = 1; i <= selectedRepeat; i++) {
         PHASES.push(`user_audio_${i}`);
+        // Add pause after every play EXCEPT the last one
         if (i < selectedRepeat) PHASES.push(`pause_${i}`);
     }
     PHASES.push('closing', 'completed');
+
     if (selectedRepeat === 1) PHASE_LABELS = ['Intro', 'Your Audio', 'Closing'];
     else {
-        PHASE_LABELS = ['Intro', 'Your Audio'];
-        for (let i = 2; i <= selectedRepeat; i++) PHASE_LABELS.push(`Play ${i}`);
+        PHASE_LABELS = ['Intro'];
+        for (let i = 1; i <= selectedRepeat; i++) PHASE_LABELS.push(`Play ${i}`);
         PHASE_LABELS.push('Closing');
     }
 
@@ -792,6 +941,10 @@ async function startSession() {
     sessionActive = true;
     currentPhase = 'intro';
     renderProgressSteps(0);
+    // iOS Audio Context Resume Hack
+    if (audioContext && audioContext.state === 'suspended') {
+        await audioContext.resume();
+    }
     await playPhase();
 }
 
@@ -852,27 +1005,60 @@ async function playPhase() {
         document.getElementById('rateIndicator').style.display = 'none';
         circle.classList.add('playing');
         document.getElementById('sessionWave').style.display = 'flex';
-        document.getElementById('sessionControls').style.display = 'block';
+        document.getElementById('sessionControls').style.display = 'flex';
         await playAudioFile('first.mp3');
         nextPhase();
     } else if (currentPhase.startsWith('user_audio_')) {
         renderProgressSteps(stepIndex);
         phaseText.textContent = 'Playing your intention...';
         document.getElementById('rateIndicator').style.display = 'block';
+        if (userAudio) {
+            userAudio.pause();
+            userAudio.onended = null;
+            userAudio.ontimeupdate = null;
+            userAudio = null;
+        }
+
         userAudio = new Audio(sessionAudioUrl);
+        // Important for iOS: load() and reset
+        userAudio.load();
+
         userAudio.playbackRate = selectedSpeed;
-        if (audioContext && sessionDestination) {
-            try {
+        userAudio.volume = selectedVolume;
+
+        // Fix for "plays 2 times then stops":
+        // Ensure the onended callback is robust and distinct for each phase instance
+        userAudio.onended = () => {
+            console.log("Phase " + currentPhase + " ended.");
+            nextPhase();
+        };
+
+        userAudio.ontimeupdate = () => {
+            if (userAudio && !isNaN(userAudio.duration)) {
+                timeText.textContent = `${formatTime(userAudio.currentTime)} / ${formatTime(userAudio.duration)}`;
+            }
+        };
+
+        try {
+            if (audioContext && sessionDestination) {
+                // Determine if we can create a source (can only create once per element)
+                // Since we create new Audio() every time, this is fine.
                 const source = audioContext.createMediaElementSource(userAudio);
                 source.connect(sessionDestination);
                 source.connect(audioContext.destination);
-            } catch (e) { }
+            }
+            await userAudio.play();
+        } catch (e) {
+            console.error("Playback error:", e);
+            // Fallback: if context/source fails, just try playing
+            try {
+                await userAudio.play();
+            } catch (e2) {
+                console.error("Fallback playback failed:", e2);
+                // If total failure, skip after 2s so app doesn't hang
+                setTimeout(() => nextPhase(), 2000);
+            }
         }
-        userAudio.onended = () => nextPhase();
-        userAudio.ontimeupdate = () => {
-            timeText.textContent = `${formatTime(userAudio.currentTime)} / ${formatTime(userAudio.duration || 0)}`;
-        };
-        await userAudio.play();
     } else if (currentPhase.startsWith('pause_')) {
         renderProgressSteps(stepIndex);
         phaseText.textContent = 'Take a deep breath...';
@@ -902,6 +1088,7 @@ function getStepIndex() {
 function playAudioFile(url) {
     return new Promise(resolve => {
         const audio = new Audio(url);
+        audio.volume = selectedVolume;
         currentPlayingAudio = audio;
         audio.onended = () => { currentPlayingAudio = null; resolve(); };
         audio.play().catch(() => setTimeout(resolve, 2000));
@@ -1013,7 +1200,12 @@ async function speakSequence() {
         if (i < gameSequence.length - 1) {
             phaseText.textContent = '...';
             timeText.textContent = '';
-            await new Promise(r => setTimeout(r, 1500));
+            document.getElementById('sessionWave').style.display = 'none';
+            for (let j = 15; j > 0; j--) {
+                phaseText.textContent = `Next item in ${j}s...`;
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            document.getElementById('sessionWave').style.display = 'flex';
         }
     }
 

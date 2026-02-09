@@ -193,124 +193,158 @@
                     <div class="setting-row">
                         <label class="setting-label">Playback Speed:</label>
                         <div class="speed-options">
-                            <button class="speed-btn" data-speed="0.25" onclick="selectSpeed(0.25)">0.25x</button>
                             <button class="speed-btn" data-speed="0.5" onclick="selectSpeed(0.5)">0.5x</button>
-                            <button class="speed-btn active" data-speed="0.75"
-                                onclick="selectSpeed(0.75)">0.75x</button>
+                            <button class="speed-btn" data-speed="0.75" onclick="selectSpeed(0.75)">0.75x</button>
+                            <button class="speed-btn active" data-speed="1" onclick="selectSpeed(1)">1x</button>
+                            <button class="speed-btn" data-speed="1.5" onclick="selectSpeed(1.5)">1.5x</button>
+                            <button class="speed-btn" data-speed="2" onclick="selectSpeed(2)">2x</button>
+                            <button class="speed-btn" data-speed="3" onclick="selectSpeed(3)">3x</button>
+                            <button class="speed-btn" data-speed="5" onclick="selectSpeed(5)">5x</button>
                         </div>
                     </div>
-                    <div class="setting-row">
-                        <label class="setting-label">Repeat Count:</label>
-                        <div class="repeat-options">
-                            <button class="repeat-btn" data-repeat="1" onclick="selectRepeat(1)">1x</button>
-                            <button class="repeat-btn" data-repeat="2" onclick="selectRepeat(2)">2x</button>
-                            <button class="repeat-btn active" data-repeat="3" onclick="selectRepeat(3)">3x</button>
-                            <button class="repeat-btn" data-repeat="4" onclick="selectRepeat(4)">4x</button>
-                            <button class="repeat-btn" data-repeat="5" onclick="selectRepeat(5)">5x</button>
+                    <div class="setting-row preview-row" style="justify-content: center; margin-bottom: 15px;">
+                        <button class="btn btn-outline" id="previewBtn" onclick="togglePreview()"
+                            style="font-size: 0.9rem; padding: 8px 16px;">
+                            <span>▶️</span> <span id="previewBtnText">Preview Sound (15s)</span>
+                        </button>
+                        <div id="previewStatus" style="display:none; align-items:center; gap:8px; margin-left:10px;">
                         </div>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn btn-outline" id="clearBtn" style="display: none; flex: 0.4;"
-                        onclick="clearAudio()">Clear</button>
-                    <button class="btn btn-primary" id="beginBtn" disabled onclick="beginSession()">Begin
-                        Session</button>
-                </div>
-            </div>
-
-            <div id="gameModeContent" style="display: none;">
-                <div class="game-section">
-                    <h3 class="section-title">Choose Category</h3>
-                    <p class="section-desc">Select what you want to memorize</p>
-                    <div class="category-options">
-                        <button class="category-btn active" data-category="flowers"
-                            onclick="selectCategory('flowers')"><span>🌸</span>Flowers</button>
-                        <button class="category-btn" data-category="colors"
-                            onclick="selectCategory('colors')"><span>🎨</span>Colors</button>
-                        <button class="category-btn" data-category="numbers"
-                            onclick="selectCategory('numbers')"><span>🔢</span>Numbers</button>
-                    </div>
-                    <div class="setting-row" style="margin-top: 20px;">
-                        <label class="setting-label" style="text-align: center;">Difficulty (items):</label>
-                        <div class="difficulty-options">
-                            <button class="difficulty-btn" data-difficulty="3" onclick="selectDifficulty(3)">3</button>
-                            <button class="difficulty-btn active" data-difficulty="5"
-                                onclick="selectDifficulty(5)">5</button>
-                            <button class="difficulty-btn" data-difficulty="7" onclick="selectDifficulty(7)">7</button>
+                        <span style="color:var(--primary); font-size:0.9rem;">Playing</span>
+                        <div class="wave-animation" style="height: 20px;">
+                            <div class="wave-bar" style="background:var(--primary);"></div>
+                            <div class="wave-bar" style="background:var(--primary);"></div>
+                            <div class="wave-bar" style="background:var(--primary);"></div>
                         </div>
                     </div>
                 </div>
-                <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="beginGameSession()"><span>🎮</span>Start Memory
-                        Game</button>
+                <div class="setting-row">
+                    <label class="setting-label">Repeat Count:</label>
+                    <div class="repeat-options">
+                        <button class="repeat-btn" data-repeat="1" onclick="selectRepeat(1)">1x</button>
+                        <button class="repeat-btn" data-repeat="2" onclick="selectRepeat(2)">2x</button>
+                        <button class="repeat-btn active" data-repeat="3" onclick="selectRepeat(3)">3x</button>
+                        <button class="repeat-btn" data-repeat="4" onclick="selectRepeat(4)">4x</button>
+                        <button class="repeat-btn" data-repeat="5" onclick="selectRepeat(5)">5x</button>
+                    </div>
                 </div>
+                <div class="setting-row">
+                    <label class="setting-label">Volume: <span id="volumeValue">100%</span></label>
+                    <div class="volume-control" style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">🔈</span>
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1"
+                            style="flex: 1; accent-color: var(--primary);" oninput="updateVolume(this.value)">
+                        <span style="font-size: 1.2rem;">🔊</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-outline" id="clearBtn" style="display: none; flex: 0.4;"
+                    onclick="clearAudio()">Clear</button>
+                <button class="btn btn-primary" id="beginBtn" disabled onclick="beginSession()">Begin
+                    Session</button>
             </div>
         </div>
 
-        <!-- Session Screen -->
-        <div class="session-container" id="sessionScreen">
-            <h1>Meditation Session</h1>
-            <p class="subtitle" id="sessionSubtitle">Namaste</p>
-            <div class="progress-steps" id="progressSteps"></div>
-
-            <div id="sessionContent">
-                <div class="meditation-circle" id="meditationCircle"><span id="meditationEmoji">🧘</span></div>
-                <div class="session-wave wave-animation" id="sessionWave" style="display: none;">
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
+        <div id="gameModeContent" style="display: none;">
+            <div class="game-section">
+                <h3 class="section-title">Choose Category</h3>
+                <p class="section-desc">Select what you want to memorize</p>
+                <div class="category-options">
+                    <button class="category-btn active" data-category="flowers"
+                        onclick="selectCategory('flowers')"><span>🌸</span>Flowers</button>
+                    <button class="category-btn" data-category="colors"
+                        onclick="selectCategory('colors')"><span>🎨</span>Colors</button>
+                    <button class="category-btn" data-category="numbers"
+                        onclick="selectCategory('numbers')"><span>🔢</span>Numbers</button>
                 </div>
-                <p class="phase-text" id="phaseText">Preparing...</p>
-                <p class="time-text" id="timeText"></p>
-                <div class="rate-indicator" id="rateIndicator" style="display: none;">
-                    <span class="rate-text">Playing at 0.75x speed</span>
+                <div class="setting-row" style="margin-top: 20px;">
+                    <label class="setting-label" style="text-align: center;">Difficulty (items):</label>
+                    <div class="difficulty-options">
+                        <button class="difficulty-btn" data-difficulty="3" onclick="selectDifficulty(3)">3</button>
+                        <button class="difficulty-btn active" data-difficulty="5"
+                            onclick="selectDifficulty(5)">5</button>
+                        <button class="difficulty-btn" data-difficulty="7" onclick="selectDifficulty(7)">7</button>
+                    </div>
                 </div>
-                <div class="session-controls" id="sessionControls" style="display: none;">
-                    <button class="control-btn" id="pauseResumeBtn" onclick="togglePauseResume()">⏸️</button>
-                </div>
-                <button class="cancel-btn" id="cancelBtn" onclick="endSession()">End Session</button>
             </div>
-
-            <div class="completed-container" id="completedContainer">
-                <div class="completed-icon">✨</div>
-                <h2 class="completed-title">Session Complete</h2>
-                <div class="completed-actions">
-                    <button class="btn btn-primary" id="downloadSessionBtn" onclick="downloadSession()"
-                        style="display: none;">Download</button>
-                    <button class="btn btn-primary" onclick="repeatSession()">Repeat</button>
-                    <button class="btn btn-outline" onclick="newSession()">New Session</button>
-                </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="beginGameSession()"><span>🎮</span>Start Memory
+                    Game</button>
             </div>
         </div>
+    </div>
 
-        <!-- Game Answer Screen -->
-        <div class="game-answer-container" id="gameAnswerScreen">
-            <h1>Memory Challenge</h1>
-            <p class="subtitle">Recall the sequence</p>
-            <div id="gameAnswerContent" style="width: 100%;">
-                <p class="section-desc">Select items in order</p>
-                <div class="sequence-display" id="sequenceDisplay"></div>
-                <div class="answer-options" id="answerOptions"></div>
-                <div class="action-buttons">
-                    <button class="btn btn-outline" onclick="resetGameAnswer()">Reset</button>
-                    <button class="btn btn-primary" id="submitAnswerBtn" onclick="submitGameAnswer()"
-                        disabled>Submit</button>
+    <!-- Session Screen -->
+    <div class="session-container" id="sessionScreen">
+        <h1>Meditation Session</h1>
+        <p class="subtitle" id="sessionSubtitle">Namaste</p>
+        <div class="progress-steps" id="progressSteps"></div>
+
+        <div id="sessionContent">
+            <div class="meditation-circle" id="meditationCircle"><span id="meditationEmoji">🧘</span></div>
+            <div class="session-wave wave-animation" id="sessionWave" style="display: none;">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+            <p class="phase-text" id="phaseText">Preparing...</p>
+            <p class="time-text" id="timeText"></p>
+            <div class="rate-indicator" id="rateIndicator" style="display: none;">
+                <span class="rate-text">Playing at 0.75x speed</span>
+            </div>
+            <div class="session-controls" id="sessionControls"
+                style="display: none; flex-direction: column; align-items: center; gap: 15px;">
+                <button class="control-btn" id="pauseResumeBtn" onclick="togglePauseResume()">⏸️</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1rem;">🔈</span>
+                    <input type="range" class="session-volume-slider" min="0" max="1" step="0.1" value="1"
+                        style="width: 100px; accent-color: var(--primary);" oninput="updateVolume(this.value)">
+                    <span style="font-size: 1rem;">🔊</span>
                 </div>
             </div>
-            <div class="completed-container" id="gameResultContainer">
-                <div class="completed-icon" id="resultIcon">🎉</div>
-                <h2 class="completed-title" id="resultTitle">Great Job !</h2>
-                <div class="score-display">
-                    <div class="stat-value" id="scoreValue">0/5</div>
-                </div>
-                <div id="scoreBreakdown" style="width: 100%; margin: 20px 0;"></div>
-                <div class="completed-actions">
-                    <button class="btn btn-primary" onclick="playGameAgain()">Play Again</button>
-                    <button class="btn btn-outline" onclick="backToHome()">Home</button>
-                </div>
+            <button class="cancel-btn" id="cancelBtn" onclick="endSession()">End Session</button>
+        </div>
+
+        <div class="completed-container" id="completedContainer">
+            <div class="completed-icon">✨</div>
+            <h2 class="completed-title">Session Complete</h2>
+            <div class="completed-actions">
+                <button class="btn btn-primary" id="downloadSessionBtn" onclick="downloadSession()"
+                    style="display: none;">Download</button>
+                <button class="btn btn-primary" onclick="repeatSession()">Repeat</button>
+                <button class="btn btn-outline" onclick="newSession()">New Session</button>
             </div>
         </div>
+    </div>
+
+    <!-- Game Answer Screen -->
+    <div class="game-answer-container" id="gameAnswerScreen">
+        <h1>Memory Challenge</h1>
+        <p class="subtitle">Recall the sequence</p>
+        <div id="gameAnswerContent" style="width: 100%;">
+            <p class="section-desc">Select items in order</p>
+            <div class="sequence-display" id="sequenceDisplay"></div>
+            <div class="answer-options" id="answerOptions"></div>
+            <div class="action-buttons">
+                <button class="btn btn-outline" onclick="resetGameAnswer()">Reset</button>
+                <button class="btn btn-primary" id="submitAnswerBtn" onclick="submitGameAnswer()"
+                    disabled>Submit</button>
+            </div>
+        </div>
+        <div class="completed-container" id="gameResultContainer">
+            <div class="completed-icon" id="resultIcon">🎉</div>
+            <h2 class="completed-title" id="resultTitle">Great Job !</h2>
+            <div class="score-display">
+                <div class="stat-value" id="scoreValue">0/5</div>
+            </div>
+            <div id="scoreBreakdown" style="width: 100%; margin: 20px 0;"></div>
+            <div class="completed-actions">
+                <button class="btn btn-primary" onclick="playGameAgain()">Play Again</button>
+                <button class="btn btn-outline" onclick="backToHome()">Home</button>
+            </div>
+        </div>
+    </div>
 
     </div>
     <script type="module" src="/src/main.js"></script>
