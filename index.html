@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>G Power Yoga & Meditation</title>
+    <title>Gowri Yoga Centre</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -18,7 +18,7 @@
             <div class="auth-card">
                 <div class="logo-container">
                     <div class="logo-circle">G</div>
-                    <h1>G Power Yoga</h1>
+                    <h1>Gowri Yoga Centre</h1>
                 </div>
                 <h2 class="auth-title">Welcome Back</h2>
                 <p class="auth-subtitle">Sign in to your sanctuary</p>
@@ -73,7 +73,7 @@
             <div class="auth-card">
                 <div class="logo-container">
                     <div class="logo-circle">G</div>
-                    <h1>G Power Yoga</h1>
+                    <h1>Gowri Yoga Centre</h1>
                 </div>
                 <h2 class="auth-title">Begin Your Journey</h2>
                 <div class="auth-error" id="signupError" style="display: none;"></div>
@@ -103,7 +103,7 @@
             <div class="auth-card">
                 <div class="logo-container">
                     <div class="logo-circle">G</div>
-                    <h1>G Power Yoga</h1>
+                    <h1>Gowri Yoga Centre</h1>
                 </div>
                 <h2 class="auth-title">Admin Portal</h2>
                 <div class="auth-error" id="adminLoginError" style="display: none;"></div>
@@ -133,7 +133,7 @@
 
             <div class="logo-container">
                 <div class="logo-circle">G</div>
-                <h1>G Power Yoga</h1>
+                <h1>Gowri Yoga Centre</h1>
             </div>
             <p class="subtitle">Mind, Body, and Soul Connection</p>
 
@@ -208,12 +208,12 @@
                             <span>▶️</span> <span id="previewBtnText">Preview Sound (15s)</span>
                         </button>
                         <div id="previewStatus" style="display:none; align-items:center; gap:8px; margin-left:10px;">
-                        </div>
-                        <span style="color:var(--primary); font-size:0.9rem;">Playing</span>
-                        <div class="wave-animation" style="height: 20px;">
-                            <div class="wave-bar" style="background:var(--primary);"></div>
-                            <div class="wave-bar" style="background:var(--primary);"></div>
-                            <div class="wave-bar" style="background:var(--primary);"></div>
+                            <span style="color:var(--primary); font-size:0.9rem;">Playing</span>
+                            <div class="wave-animation" style="height: 20px;">
+                                <div class="wave-bar" style="background:var(--primary);"></div>
+                                <div class="wave-bar" style="background:var(--primary);"></div>
+                                <div class="wave-bar" style="background:var(--primary);"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -257,6 +257,8 @@
                         onclick="selectCategory('colors')"><span>🎨</span>Colors</button>
                     <button class="category-btn" data-category="numbers"
                         onclick="selectCategory('numbers')"><span>🔢</span>Numbers</button>
+                    <button class="category-btn" data-category="alphabets"
+                        onclick="selectCategory('alphabets')"><span>🔤</span>Alphabets</button>
                 </div>
                 <div class="setting-row" style="margin-top: 20px;">
                     <label class="setting-label" style="text-align: center;">Difficulty (items):</label>
@@ -265,6 +267,7 @@
                         <button class="difficulty-btn active" data-difficulty="5"
                             onclick="selectDifficulty(5)">5</button>
                         <button class="difficulty-btn" data-difficulty="7" onclick="selectDifficulty(7)">7</button>
+                        <button class="difficulty-btn" data-difficulty="10" onclick="selectDifficulty(10)">10</button>
                     </div>
                 </div>
             </div>

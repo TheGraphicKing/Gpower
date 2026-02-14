@@ -1185,3 +1185,127 @@ h1 {
     display: flex;
     align-items: center;
 }
+
+/* --- Premium UI & Mobile Responsiveness --- */
+
+/* Custom Range Slider */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    margin-top: -8px;
+    /* Center thumb on track */
+    box-shadow: 0 2px 6px rgba(143, 168, 155, 0.4);
+    border: 2px solid white;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    background: var(--primary-light);
+    border-radius: 4px;
+}
+
+/* Firefox Support */
+input[type=range]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(143, 168, 155, 0.4);
+}
+
+input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    background: var(--primary-light);
+    border-radius: 4px;
+}
+
+/* Mobile Tweaks */
+@media (max-width: 480px) {
+    .section {
+        padding: 20px 16px;
+    }
+
+    .speed-options,
+    .repeat-options {
+        gap: 6px;
+    }
+
+    /* Make buttons fit better */
+    .speed-btn,
+    .repeat-btn {
+        flex: 1 0 auto;
+        min-width: 48px;
+        padding: 10px 8px;
+        font-size: 0.85rem;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* Center preview controls */
+    .preview-row {
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    #previewStatus {
+        margin-left: 0 !important;
+        /* Remove desktop indent */
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Session Controls Responsive */
+    .session-controls {
+        width: 100%;
+        gap: 20px !important;
+    }
+
+    .session-controls>div {
+        width: 100%;
+        justify-content: center;
+        padding: 0 20px;
+    }
+
+    .session-volume-slider {
+        width: 100% !important;
+        /* Override inline style */
+        flex: 1;
+    }
+
+    /* Button Stacking for clearer actions */
+    .action-buttons {
+        gap: 10px;
+    }
+
+    .category-options {
+        gap: 8px;
+    }
+
+    .category-btn {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+}

@@ -344,6 +344,9 @@ window.loadAdminData = async function () {
                 <button class="close-modal-btn" onclick="closeUserDetails()">×</button>
             </div>
             <div class="activity-timeline" id="userActivityTimeline"></div>
+            <div class="modal-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; display: flex; justify-content: flex-end;">
+                <button class="btn btn-outline" onclick="deleteUser()" style="color: #dc3545; border-color: #dc3545;">Delete User</button>
+            </div>
         </div>
     </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
@@ -599,6 +602,7 @@ window.showUserDetails = function (userId) {
 
     document.getElementById('modalUserName').textContent = user.name;
     document.getElementById('modalUserEmail').textContent = user.email;
+    document.getElementById('userDetailsModal').dataset.userId = userId;
 
     const timeline = document.getElementById('userActivityTimeline');
     if (!user.activities || user.activities.length === 0) {
@@ -614,6 +618,34 @@ window.showUserDetails = function (userId) {
 
 window.closeUserDetails = function () {
     document.getElementById('userDetailsModal').classList.remove('active');
+    // Clear current user ID to avoid accidental deletions of wrong user
+    document.getElementById('userDetailsModal').dataset.userId = '';
+}
+
+window.deleteUser = async function () {
+    const userId = document.getElementById('userDetailsModal').dataset.userId;
+    if (!userId) return;
+
+    if (confirm("Are you sure you want to delete this user? This action cannot be undone and will remove all their data.")) {
+        try {
+            // Delete from Firestore
+            await db.collection('users').doc(userId).delete();
+
+            // Update local state
+            allUsers = allUsers.filter(u => u.id !== userId);
+            filteredUsers = filteredUsers.filter(u => u.id !== userId);
+
+            // Refresh UI
+            renderAdminStats();
+            renderUsersTable();
+            closeUserDetails();
+
+            alert("User deleted successfully.");
+        } catch (e) {
+            console.error("Error deleting user:", e);
+            alert("Failed to delete user: " + e.message);
+        }
+    }
 }
 
 
@@ -653,9 +685,10 @@ let selectedDifficulty = 5;
 let gameSequence = [];
 let userSequence = [];
 const GAME_DATA = {
-    flowers: ['Rose', 'Lily', 'Lotus', 'Jasmine', 'Marigold', 'Sunflower', 'Tulip', 'Daisy', 'Hibiscus'],
+    flowers: ['Rose', 'Lily', 'Lotus', 'Jasmine', 'Marigold', 'Sunflower', 'Tulip', 'Daisy', 'Hibiscus', 'Orchid'],
     colors: ['Red', 'Blue', 'Green', 'Yellow', 'Orange', 'Pink', 'White', 'Black', 'Purple', 'Golden'],
-    numbers: Array.from({ length: 41 }, (_, i) => (i + 10).toString())
+    numbers: ['10', '15', '20', '25', '30', '35', '40', '45', '50', '55'],
+    alphabets: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
 };
 const PAUSE_DURATION = 3000;
 
@@ -843,7 +876,9 @@ async function startRecording() {
             if (e.data.size > 0) audioChunks.push(e.data);
         };
         mediaRecorder.onstop = () => {
-            const type = options.mimeType || 'audio/webm';
+            // Use the actual mime type from the recorder if available, otherwise fallback to the requested option
+            const type = mediaRecorder.mimeType || options.mimeType || 'audio/webm';
+            console.log("Recording stopped. MimeType:", type);
             recordedBlob = new Blob(audioChunks, { type: type });
             uploadedFile = null;
             updateUI();
@@ -1150,6 +1185,9 @@ function resetSession() {
     document.getElementById('completedContainer').style.display = 'none';
     document.getElementById('sessionScreen').classList.remove('active');
     document.getElementById('homeScreen').classList.remove('hidden');
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
 }
 
 // Game Logic
@@ -1159,6 +1197,7 @@ function generateSequence() {
 }
 
 window.beginGameSession = function () {
+    sessionActive = true;
     gameSequence = generateSequence();
     userSequence = [];
     logActivity('game_start', { category: selectedCategory, difficulty: selectedDifficulty });
@@ -1193,18 +1232,23 @@ async function speakSequence() {
     circle.classList.add('playing');
 
     for (let i = 0; i < gameSequence.length; i++) {
+        if (!sessionActive) return;
         const item = gameSequence[i];
         phaseText.textContent = `Item ${i + 1} of ${gameSequence.length}`;
         timeText.innerHTML = '🔊 Speaking...';
         await speakText(item);
+        if (!sessionActive) return;
+
         if (i < gameSequence.length - 1) {
             phaseText.textContent = '...';
             timeText.textContent = '';
             document.getElementById('sessionWave').style.display = 'none';
-            for (let j = 15; j > 0; j--) {
+            for (let j = 20; j > 0; j--) {
+                if (!sessionActive) return;
                 phaseText.textContent = `Next item in ${j}s...`;
                 await new Promise(r => setTimeout(r, 1000));
             }
+            if (!sessionActive) return;
             document.getElementById('sessionWave').style.display = 'flex';
         }
     }
