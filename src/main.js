@@ -760,10 +760,10 @@ function startPreview() {
         const status = document.getElementById('previewStatus');
         if (status) status.style.display = 'flex';
 
-        // Stop after 15 seconds
+        // Stop after 45 seconds
         previewTimeout = setTimeout(() => {
             stopPreview();
-        }, 15000);
+        }, 45000);
     }).catch(e => {
         console.error("Preview error", e);
         stopPreview();
@@ -782,7 +782,7 @@ function stopPreview() {
     }
 
     const btnText = document.getElementById('previewBtnText');
-    if (btnText) btnText.textContent = 'Preview Sound (15s)';
+    if (btnText) btnText.textContent = 'Preview Sound (45s)';
 
     const status = document.getElementById('previewStatus');
     if (status) status.style.display = 'none';
@@ -819,6 +819,8 @@ window.handleFileUpload = function (event) {
         recordedBlob = null;
         recordingDuration = 0;
         updateUI();
+        // Auto-play preview when file is uploaded
+        startPreview();
     }
 }
 window.clearAudio = function () {
@@ -882,8 +884,10 @@ async function startRecording() {
             recordedBlob = new Blob(audioChunks, { type: type });
             uploadedFile = null;
             updateUI();
+            // Auto-play preview when recording stops
+            startPreview();
         };
-        mediaRecorder.start();
+        mediaRecorder.start(1000); // Collect data every 1s to support long recordings
         isRecording = true;
         recordingStartTime = Date.now();
         document.getElementById('recordBtn').classList.add('recording');
@@ -922,6 +926,7 @@ function formatTime(seconds) {
 }
 
 window.beginSession = function () {
+    stopPreview(); // Ensure preview stops before session starts
     if (sessionAudioUrl) URL.revokeObjectURL(sessionAudioUrl);
 
     if (recordedBlob) sessionAudioUrl = URL.createObjectURL(recordedBlob);
@@ -1264,6 +1269,14 @@ function speakText(text) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
+
+            // specific Indian accent preference
+            const voices = window.speechSynthesis.getVoices();
+            const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('India'));
+            if (indianVoice) {
+                u.voice = indianVoice;
+            }
+
             u.rate = 0.8;
             u.onend = resolve;
             u.onerror = resolve;

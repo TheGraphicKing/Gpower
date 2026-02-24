@@ -32,11 +32,15 @@ body {
     background: var(--background);
     color: var(--text-primary);
     height: 100vh;
+    height: 100dvh;
+    /* Dynamic viewport height for modern browsers */
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    /* Remove tap highlight on mobile */
 }
 
 .container {
@@ -48,8 +52,18 @@ body {
     align-items: center;
     overflow-y: auto;
     padding: 24px;
-    padding-bottom: 100px;
+    padding-top: max(24px, env(safe-area-inset-top));
+    /* Respect notch */
+    padding-bottom: max(100px, env(safe-area-inset-bottom) + 20px);
+    /* Respect home indicator */
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.container::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar for cleaner look */
 }
 
 /* Logo Styles */
@@ -97,11 +111,17 @@ h1 {
 @media (max-width: 480px) {
     .container {
         padding: 16px;
-        padding-bottom: 90px;
+        padding-top: max(16px, env(safe-area-inset-top));
+        padding-bottom: max(90px, env(safe-area-inset-bottom) + 20px);
     }
 
     h1 {
         font-size: 1.5rem;
+    }
+
+    .form-input {
+        font-size: 16px;
+        /* Prevent iOS zoom */
     }
 }
 
@@ -196,6 +216,11 @@ h1 {
 .auth-btn-primary:hover {
     background: var(--primary-dark);
     transform: translateY(-1px);
+}
+
+.auth-btn-primary:active {
+    transform: translateY(1px);
+    /* Touch feedback */
 }
 
 .auth-btn-google {
@@ -327,7 +352,14 @@ h1 {
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 8px 24px rgba(143, 168, 155, 0.15);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.record-btn:active {
+    transform: scale(0.95);
 }
 
 .record-btn:hover {
@@ -392,6 +424,11 @@ h1 {
     background: var(--primary-dark);
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(143, 168, 155, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(143, 168, 155, 0.2);
 }
 
 .btn-outline {
@@ -603,6 +640,11 @@ h1 {
 .mode-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.mode-btn:active {
+    transform: scale(0.98);
 }
 
 .mode-btn.active {
@@ -904,6 +946,10 @@ h1 {
 .answer-btn:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
+}
+
+.answer-btn:active {
+    transform: scale(0.95);
 }
 
 .answer-btn.selected {
