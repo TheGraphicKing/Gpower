@@ -684,6 +684,78 @@ let selectedCategory = 'flowers';
 let selectedDifficulty = 5;
 let gameSequence = [];
 let userSequence = [];
+let gameStartTime = null; // Tracks when a memory game session started
+
+// =====================
+// WAKE LOCK (Screen Timeout Prevention)
+// =====================
+let wakeLock = null;
+
+async function requestWakeLock() {
+    // Try the Screen Wake Lock API first (Chrome, Edge, Safari 16.4+)
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake Lock acquired.');
+            // Re-acquire if released automatically (e.g. tab visibility change)
+            wakeLock.addEventListener('release', () => {
+                console.log('Wake Lock released automatically.');
+            });
+            return;
+        } catch (err) {
+            console.warn('Wake Lock API failed, using video fallback:', err);
+        }
+    }
+    // Fallback: play a tiny silent looping video to keep screen awake
+    ensureWakeLockVideo();
+    const vid = document.getElementById('wakeLockVideo');
+    if (vid) {
+        vid.play().catch(() => { });
+    }
+}
+
+function releaseWakeLock() {
+    if (wakeLock) {
+        wakeLock.release().catch(() => { });
+        wakeLock = null;
+        console.log('Wake Lock released.');
+    }
+    // Also pause/hide fallback video
+    const vid = document.getElementById('wakeLockVideo');
+    if (vid) vid.pause();
+}
+
+function ensureWakeLockVideo() {
+    if (document.getElementById('wakeLockVideo')) return;
+    // Tiny transparent 1x1 looping video in base64 (silent, ~170 bytes WebM)
+    const v = document.createElement('video');
+    v.id = 'wakeLockVideo';
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline', '');
+    v.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0.01;top:0;left:0;pointer-events:none;z-index:-1;';
+    // Minimal valid silent MP4 (1x1 pixel, 1 frame) as a data URI
+    v.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28ybXA0MQAAAAhmcmVlAAAAG21kYXQAAAGzABAHAAABthADAowdbb9/AAAC0W1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAPoAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAGGlvZHMAAAAAEICAgIAOAAR//////////wAAABR0cmFrAAAAXHRraGQAAAAPAAAAAAAAAAAAAAABAAAAAAAAAPoAAAAAAAAAAAAAAAEBAAAAAAEAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAIAAAACAAAAAAjZWR0cwAAABxlbHN0AAAAAAAAAAEAAAPoAAAAAAABAAAAAAGTbWRpYQAAAAAgbWRoZAAAAAAAAAAAAAAAAAAA6AAAAAAAASxhdGlzAAAAAFSbWluZgAAAABWbWhkcgAAAABhdWRpbwAAAAAAAAGQYWxsb2MAAABIbWVkaWFBQwAAACjtZGlhQQAAAAAAAAAAAAAAAAAAAAgAAAA8c3RzZAAAAAAAAAEAAAAsc291bmRTRQAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    document.body.appendChild(v);
+}
+
+// Re-acquire wake lock and resume audio when the page becomes visible again.
+// Mobile browsers (especially iOS Safari) can pause audio when the screen
+// locks or the browser is backgrounded. This handler recovers automatically.
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && sessionActive) {
+        await requestWakeLock();
+        // If user had not manually paused, try to resume any interrupted audio
+        if (!isPaused) {
+            const audio = userAudio || currentPlayingAudio;
+            if (audio && audio.paused) {
+                audio.play().catch(e => console.warn('Visibility resume error:', e));
+            }
+        }
+    }
+});
+
 const GAME_DATA = {
     flowers: ['Rose', 'Lily', 'Lotus', 'Jasmine', 'Marigold', 'Sunflower', 'Tulip', 'Daisy', 'Hibiscus', 'Orchid'],
     colors: ['Red', 'Blue', 'Green', 'Yellow', 'Orange', 'Pink', 'White', 'Black', 'Purple', 'Golden'],
@@ -926,6 +998,7 @@ function formatTime(seconds) {
 }
 
 window.beginSession = function () {
+    requestWakeLock(); // Keep screen awake during audio playback
     stopPreview(); // Ensure preview stops before session starts
     if (sessionAudioUrl) URL.revokeObjectURL(sessionAudioUrl);
 
@@ -1052,25 +1125,39 @@ async function playPhase() {
         renderProgressSteps(stepIndex);
         phaseText.textContent = 'Playing your intention...';
         document.getElementById('rateIndicator').style.display = 'block';
+
+        // Clean up any previous audio element completely
         if (userAudio) {
             userAudio.pause();
             userAudio.onended = null;
+            userAudio.onerror = null;
             userAudio.ontimeupdate = null;
+            userAudio.src = '';
             userAudio = null;
         }
 
+        // Create a fresh Audio element each repeat
         userAudio = new Audio(sessionAudioUrl);
-        // Important for iOS: load() and reset
+        userAudio.preload = 'auto';
         userAudio.load();
-
         userAudio.playbackRate = selectedSpeed;
         userAudio.volume = selectedVolume;
 
-        // Fix for "plays 2 times then stops":
-        // Ensure the onended callback is robust and distinct for each phase instance
-        userAudio.onended = () => {
-            console.log("Phase " + currentPhase + " ended.");
+        // Capture the phase name at this exact moment so the closure is stable
+        const thisPhase = currentPhase;
+        let phaseAdvanced = false;
+
+        function advanceOnce() {
+            if (phaseAdvanced) return;
+            phaseAdvanced = true;
+            console.log('Phase ' + thisPhase + ' ended — advancing.');
             nextPhase();
+        }
+
+        userAudio.onended = advanceOnce;
+        userAudio.onerror = (e) => {
+            console.error('Audio error during ' + thisPhase + ':', e);
+            advanceOnce();
         };
 
         userAudio.ontimeupdate = () => {
@@ -1079,25 +1166,44 @@ async function playPhase() {
             }
         };
 
-        try {
-            if (audioContext && sessionDestination) {
-                // Determine if we can create a source (can only create once per element)
-                // Since we create new Audio() every time, this is fine.
+        // ── AudioContext wiring (for session recording only) ──────────────────
+        // IMPORTANT: createMediaElementSource() can only be called ONCE per
+        // HTMLMediaElement. Since we create a brand-new Audio() each repeat,
+        // this is always safe. However, some browsers still throw in certain
+        // states, so we wrap it in its own try/catch that does NOT affect playback.
+        if (audioContext && sessionDestination) {
+            try {
                 const source = audioContext.createMediaElementSource(userAudio);
                 source.connect(sessionDestination);
                 source.connect(audioContext.destination);
+            } catch (ctxErr) {
+                // If AudioContext wiring fails, audio will still play via the
+                // element directly. Session recording may be incomplete but
+                // playback continues uninterrupted.
+                console.warn('AudioContext source wiring failed (non-fatal):', ctxErr);
             }
+        }
+
+        try {
             await userAudio.play();
-        } catch (e) {
-            console.error("Playback error:", e);
-            // Fallback: if context/source fails, just try playing
-            try {
-                await userAudio.play();
-            } catch (e2) {
-                console.error("Fallback playback failed:", e2);
-                // If total failure, skip after 2s so app doesn't hang
-                setTimeout(() => nextPhase(), 2000);
+
+            // ── Safety timeout ──────────────────────────────────────────────
+            // If onended never fires (e.g. OS audio interruption, screen lock
+            // briefly pausing audio on some mobile browsers), we still advance
+            // after the expected duration + a 5-second buffer.
+            if (!isNaN(userAudio.duration) && isFinite(userAudio.duration)) {
+                const safetyMs = Math.ceil((userAudio.duration / selectedSpeed) * 1000) + 5000;
+                setTimeout(() => {
+                    if (!phaseAdvanced && currentPhase === thisPhase) {
+                        console.warn('Safety timeout fired for ' + thisPhase);
+                        advanceOnce();
+                    }
+                }, safetyMs);
             }
+        } catch (playErr) {
+            console.error('play() failed for ' + thisPhase + ':', playErr);
+            // Give the browser 500 ms to self-recover, then force-advance
+            setTimeout(() => advanceOnce(), 500);
         }
     } else if (currentPhase.startsWith('pause_')) {
         renderProgressSteps(stepIndex);
@@ -1146,9 +1252,16 @@ function nextPhase() {
 window.togglePauseResume = function () {
     const audio = userAudio || currentPlayingAudio;
     const btn = document.getElementById('pauseResumeBtn');
-    if (audio) {
-        if (isPaused) { audio.play(); btn.textContent = '⏸️'; isPaused = false; }
-        else { audio.pause(); btn.textContent = '▶️'; isPaused = true; }
+    if (isPaused) {
+        // --- RESUME ---
+        isPaused = false;
+        if (btn) btn.textContent = '⏸️';
+        if (audio) audio.play().catch(e => console.warn('Resume play error:', e));
+    } else {
+        // --- PAUSE ---
+        isPaused = true;
+        if (btn) btn.textContent = '▶️';
+        if (audio) audio.pause();
     }
 }
 
@@ -1179,6 +1292,7 @@ window.repeatSession = function () {
 window.newSession = function () { resetSession(); }
 
 function resetSession() {
+    releaseWakeLock(); // Allow screen to sleep again
     try {
         if (userAudio) { userAudio.pause(); userAudio = null; }
         if (currentPlayingAudio) { currentPlayingAudio.pause(); currentPlayingAudio = null; }
@@ -1205,7 +1319,16 @@ window.beginGameSession = function () {
     sessionActive = true;
     gameSequence = generateSequence();
     userSequence = [];
+
+    // Record & display the game start date and time
+    gameStartTime = new Date();
+    const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const timeOpts = { hour: '2-digit', minute: '2-digit', hour12: true };
+    const dateStr = gameStartTime.toLocaleDateString('en-IN', dateOpts);
+    const timeStr = gameStartTime.toLocaleTimeString('en-IN', timeOpts);
+
     logActivity('game_start', { category: selectedCategory, difficulty: selectedDifficulty });
+    requestWakeLock(); // Keep screen awake during the game
 
     // Transition
     try {
@@ -1213,8 +1336,6 @@ window.beginGameSession = function () {
         const s = document.getElementById('sessionScreen');
         s.classList.remove('active');
         const g = document.getElementById('sessionScreen');
-        // Wait, game uses same session screen for listening? No, it uses 'sessionScreen' for listening phase?
-        // Checking original: Yes, beginGameSession uses 'sessionScreen' for the listening part.
         g.classList.add('active');
         g.style.display = 'flex';
     } catch (e) { }
@@ -1225,6 +1346,18 @@ window.beginGameSession = function () {
     document.getElementById('meditationEmoji').textContent = '🧠';
     document.getElementById('sessionControls').style.display = 'none';
     document.getElementById('rateIndicator').style.display = 'none';
+
+    // Show date/time badge on the session screen
+    let dtBadge = document.getElementById('gameDateTimeBadge');
+    if (!dtBadge) {
+        dtBadge = document.createElement('div');
+        dtBadge.id = 'gameDateTimeBadge';
+        dtBadge.style.cssText = 'text-align:center;margin:8px 0 4px;font-size:0.82rem;color:rgba(255,255,255,0.85);background:rgba(0,0,0,0.25);border-radius:20px;padding:5px 14px;display:inline-block;';
+        const sub = document.getElementById('sessionSubtitle');
+        if (sub && sub.parentNode) sub.parentNode.insertBefore(dtBadge, sub.nextSibling);
+    }
+    dtBadge.style.display = 'inline-block';
+    dtBadge.innerHTML = `📅 ${dateStr} &nbsp;⏰ ${timeStr}`;
 
     setTimeout(() => speakSequence(), 1500);
 }
@@ -1334,9 +1467,29 @@ window.submitGameAnswer = function () {
 }
 
 function showGameResult(correct, results) {
+    releaseWakeLock(); // Game is done, allow screen to sleep
     document.getElementById('gameAnswerContent').style.display = 'none';
     document.getElementById('gameResultContainer').style.display = 'flex';
     document.getElementById('scoreValue').textContent = `${correct}/${gameSequence.length}`;
+
+    // Build date/time string for the result screen
+    let dateTimeHtml = '';
+    if (gameStartTime) {
+        const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const timeOpts = { hour: '2-digit', minute: '2-digit', hour12: true };
+        const dateStr = gameStartTime.toLocaleDateString('en-IN', dateOpts);
+        const timeStr = gameStartTime.toLocaleTimeString('en-IN', timeOpts);
+        dateTimeHtml = `<div id="gameResultDateTime" style="font-size:0.8rem;color:#888;margin-bottom:12px;padding:6px 16px;background:#f5f5f5;border-radius:20px;display:inline-block;">📅 ${dateStr} &nbsp;⏰ ${timeStr}</div>`;
+    }
+
+    // Inject or update the date-time display in the result container
+    let existingDT = document.getElementById('gameResultDateTime');
+    if (existingDT) existingDT.remove();
+    const scoreDisplay = document.querySelector('.score-display');
+    if (scoreDisplay && dateTimeHtml) {
+        scoreDisplay.insertAdjacentHTML('afterend', dateTimeHtml);
+    }
+
     document.getElementById('scoreBreakdown').innerHTML = results.map(r =>
         `<div style="color:${r.correct ? 'green' : 'red'}">${r.correct ? '✅' : '❌'} ${r.given}</div>`
     ).join('');
@@ -1346,6 +1499,9 @@ function showGameResult(correct, results) {
 window.playGameAgain = function () {
     document.getElementById('gameAnswerContent').style.display = 'block';
     document.getElementById('gameResultContainer').style.display = 'none';
+    // Remove old datetime badge from result screen if any
+    const oldDT = document.getElementById('gameResultDateTime');
+    if (oldDT) oldDT.remove();
     document.getElementById('gameAnswerScreen').classList.remove('active');
     window.beginGameSession();
 }
@@ -1353,6 +1509,12 @@ window.playGameAgain = function () {
 window.backToHome = function () {
     document.getElementById('gameAnswerContent').style.display = 'block';
     document.getElementById('gameResultContainer').style.display = 'none';
+    // Remove old datetime badge from result screen if any
+    const oldDT2 = document.getElementById('gameResultDateTime');
+    if (oldDT2) oldDT2.remove();
+    // Hide the session screen datetime badge
+    const badge = document.getElementById('gameDateTimeBadge');
+    if (badge) badge.style.display = 'none';
     document.getElementById('gameAnswerScreen').classList.remove('active');
     document.getElementById('homeScreen').classList.remove('hidden');
 }
